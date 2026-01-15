@@ -1,0 +1,7 @@
+awww-git
+awww-git-debug
+floorp-bin
+swaylock-effects-git
+swaylock-effects-git-debug
+yay
+yay-debug
