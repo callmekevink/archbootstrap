@@ -1,6 +1,7 @@
 awww-git
 awww-git-debug
 floorp-bin
+rofi-power-menu
 swaylock-effects-git
 swaylock-effects-git-debug
 yay

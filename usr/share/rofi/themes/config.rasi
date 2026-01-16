@@ -1,0 +1,4 @@
+
+//@theme "rofi/themes/rounded-nord-dark.rasi"
+
+@theme "/etc/rofi/themes/rounded-nord-dark.rasi"
