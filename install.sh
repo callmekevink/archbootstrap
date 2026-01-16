@@ -55,7 +55,7 @@ fi
 
 if command -v awww &>/dev/null; then
     pgrep awww-daemon >/dev/null || awww-daemon &
-    sleep 2
+    sleep 4
     WP_DIR="$HOME/.local/share/wallpapers"
     if [ -d "$WP_DIR" ] && [ "$(ls -A "$WP_DIR")" ]; then
         awww img "$WP_DIR/"* &
