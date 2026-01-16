@@ -3,22 +3,22 @@ set -euo pipefail
 
 echo "=== Arch Bootstrap ==="
 
-# 0. User input for configuration
+# 0. User input 
 read -p "Ucode? [amd/intel]: " ucode_choice
 read -p "Vulkan? [intel/amd/no]: " vulkan_choice
 read -p "Fish shell? [y/N]: " fish_choice
 
-# 1. Install core build tools
+# 1. Install core tools
 sudo pacman -Syu --needed --noconfirm base-devel git rsync
 
-# 2. Clone setup repository
+# 2. Clone repo
 REPO_URL="https://github.com/callmekevink/archbootstrap"
 CLONE_DIR="$HOME/arch-setup"
 [ -d "$CLONE_DIR" ] && rm -rf "$CLONE_DIR"
 git clone "$REPO_URL" "$CLONE_DIR"
 cd "$CLONE_DIR"
 
-# 3. Install CPU microcode and GPU drivers
+# 3. Install cpu microcode/gpu drivers
 [[ "$ucode_choice" == "amd" ]] && sudo pacman -S --needed --noconfirm amd-ucode
 [[ "$ucode_choice" == "intel" ]] && sudo pacman -S --needed --noconfirm intel-ucode
 
@@ -30,7 +30,7 @@ esac
 
 sudo mkinitcpio -P
 
-# 4. Bootstrap yay AUR helper
+# 4. yay
 if ! command -v yay &>/dev/null; then
     tempdir=$(mktemp -d)
     git clone https://aur.archlinux.org/yay.git "$tempdir/yay"
@@ -40,20 +40,20 @@ if ! command -v yay &>/dev/null; then
     rm -rf "$tempdir"
 fi
 
-# 5. Batch install system and AUR packages
+# 5. packages install
 [ -f "packages/pacman.txt" ] && sudo pacman -S --needed --noconfirm - < packages/pacman.txt
 [ -f "packages/aur.txt" ] && yay -S --needed --noconfirm - < packages/aur.txt
 
-# 6. Deploy configuration files to system and home
+# 6. deploy files
 [ -d "etc" ] && sudo rsync -a etc/ /etc/
 [ -d "usr" ] && sudo rsync -a usr/ /usr/
 [ -d "home" ] && rsync -a home/ "$HOME/"
 
-# 7. Update system caches and set wallpaper
+# 7. Update system caches 
 [ -d "$HOME/.local/share/fonts" ] && fc-cache -fv >/dev/null
 [ -d "$HOME/.local/share/applications" ] && update-desktop-database "$HOME/.local/share/applications"
 
-if command -v awww &>/dev/null; then
+if command -v awww &>/dev/null; then #set wallpaper
     pgrep awww-daemon >/dev/null || awww-daemon &
     sleep 4
     WP_DIR="$HOME/.local/share/wallpapers"
@@ -62,7 +62,7 @@ if command -v awww &>/dev/null; then
     fi
 fi
 
-# 8. Configure display manager, firewall, and shell
+# 8. displayermanager, firewall, fish
 if pacman -Qs ly >/dev/null; then
     sudo systemctl enable ly@tty2.service
     sudo systemctl disable getty@tty2.service || true
@@ -80,7 +80,7 @@ if [[ "$fish_choice" =~ ^[Yy]$ ]]; then
     sudo chsh -s /usr/bin/fish "$USER"
 fi
 
-# 9. Final cleanup
+# 9. remove repo
 cd "$HOME"
 rm -rf "$CLONE_DIR"
 echo "Done. Reboot recommended."
