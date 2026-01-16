@@ -28,6 +28,8 @@ case "$vulkan_choice" in
          sudo pacman -S --needed --noconfirm vulkan-radeon vulkan-icd-loader ;;
 esac
 
+sudo mkinitcpio -P
+
 # 4. Yay
 if ! command -v yay &>/dev/null; then
     tempdir=$(mktemp -d)
