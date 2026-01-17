@@ -15,10 +15,10 @@ if [ -f /etc/artix-release ]; then
     IS_ARTIX=true
     echo "Artix Linux detected. Configuring Repositories..."
 
-    # Step A: Clean up pacman.conf to prevent cross-repo 404s
+    # Step A: Clean up pacman.conf
     sudo sed -i '/^Include = \/etc\/pacman.d\/mirrorlist/d' /etc/pacman.conf
 
-    # Step B: Rewrite the base Artix repo structure including galaxy
+    # Step B: Rewrite base Artix structure
     sudo bash -c 'cat <<EOF > /etc/pacman.conf
 [options]
 HoldPkg     = pacman libc
@@ -37,15 +37,15 @@ Include = /etc/pacman.d/mirrorlist
 Include = /etc/pacman.d/mirrorlist
 EOF'
 
-    # Step C: Inject your requested Artix mirrors
+    # Step C: Inject requested Artix mirrors
     echo "Server = https://artix.wheaton.edu/repos/\$repo/os/\$arch" | sudo tee /etc/pacman.d/mirrorlist
     echo "Server = https://ftp.sh.cvut.cz/artix-linux/\$repo/os/\$arch" | sudo tee -a /etc/pacman.d/mirrorlist
 
-    # Step D: Force refresh with galaxy enabled to find support package
+    # Step D: Sync Artix and install support
     sudo pacman -Sy --noconfirm
     sudo pacman -S --needed --noconfirm artix-archlinux-support
 
-    # Step E: Add Arch [extra] and [multilib] properly
+    # Step E: Add Arch [extra] and [multilib]
     if ! grep -q "\[extra\]" /etc/pacman.conf; then
         sudo bash -c 'cat <<EOF >> /etc/pacman.conf
 
@@ -57,14 +57,20 @@ Include = /etc/pacman.d/mirrorlist-arch
 EOF'
     fi
 
-    # Step F: Seed Arch mirrors
+    # Step F: Seed Arch mirrors with a high-reliability global mirror
     echo "Server = https://geo.mirror.pkgbuild.com/\$repo/os/\$arch" | sudo tee /etc/pacman.d/mirrorlist-arch
+    
+    # Step G: CRITICAL - Initialize Keyrings
+    echo "Initializing GPG Keyrings (this may take a minute)..."
+    sudo pacman-key --init
+    sudo pacman-key --populate artix archlinux
     
     echo "Optimizing Arch mirrors..."
     sudo pacman -Sy --needed --noconfirm reflector
     sudo reflector --latest 10 --protocol https --sort rate --save /etc/pacman.d/mirrorlist-arch
     
-    sudo pacman -Syy --noconfirm archlinux-keyring artix-keyring
+    # Force a double-refresh to ensure [extra] is downloaded
+    sudo pacman -Syy --noconfirm
 fi
 
 # install base tools
