@@ -13,9 +13,9 @@ read -p "Install Discord? [y/N]: " discord_choice
 
 PACMAN_CONF="/etc/pacman.conf"
 
-# 0.1 Artix / Arch extra support
+# 0.1 Artix / Arch extra support (elogind-based)
 echo "Installing Artix Arch support..."
-sudo pacman -S --needed --noconfirm artix-archlinux-support dbus-dinit seatd-dinit
+sudo pacman -S --needed --noconfirm artix-archlinux-support dbus-dinit
 sudo pacman-key --populate archlinux
 
 # Enable Arch extra repo if missing
@@ -40,8 +40,10 @@ cd "$CLONE_DIR"
 # 4. Vulkan
 case "$vulkan_choice" in
     intel) sudo pacman -S --needed --noconfirm vulkan-intel vulkan-icd-loader ;;
-    amd) sudo pacman -R --noconfirm amdvlk || true
-         sudo pacman -S --needed --noconfirm vulkan-radeon vulkan-icd-loader ;;
+    amd)
+        sudo pacman -R --noconfirm amdvlk || true
+        sudo pacman -S --needed --noconfirm vulkan-radeon vulkan-icd-loader
+        ;;
 esac
 
 # 5. Discord
@@ -83,17 +85,14 @@ if command -v awww &>/dev/null; then
     [ -d "$WP_DIR" ] && [ "$(ls -A "$WP_DIR")" ] && awww img "$WP_DIR/"* &
 fi
 
-# 11. Display manager (ly) & firewall
+# 11. Display manager (ly)
 if pacman -Qs ly >/dev/null; then
     sudo pacman -S --needed --noconfirm ly-dinit || true
     [ -f "/etc/dinit.d/ly" ] && sudo sed -i 's|/usr/bin/ly|/usr/bin/ly-dm|g' /etc/dinit.d/ly
     sudo dinitctl enable ly || true
 fi
 
-sudo dinitctl enable seatd || true
-sudo dinitctl start seatd || true
-
-# Basic firewall rules
+# 12. Firewall (UFW)
 if command -v ufw &>/dev/null; then
     sudo dinitctl start ufw || true
     sudo ufw default deny incoming
@@ -104,13 +103,13 @@ if command -v ufw &>/dev/null; then
     sudo ufw --force enable
 fi
 
-# 12. Fish shell
+# 13. Fish shell
 if [[ "$fish_choice" =~ ^[Yy]$ ]]; then
     sudo pacman -S --noconfirm fish
     sudo chsh -s /usr/bin/fish "$USER"
 fi
 
-# 13. Cleanup
+# 14. Cleanup
 cd "$HOME"
 rm -rf "$CLONE_DIR"
 echo "Done."
