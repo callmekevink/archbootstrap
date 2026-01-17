@@ -79,7 +79,7 @@ fi
 
 # Wallpaper
 if command -v awww &>/dev/null; then
-    pgrep awww-daemon >/dev/null || awww init &
+    pgrep awww-daemon >/dev/null || awww-daemon &
     sleep 4
     WP_DIR="$HOME/.local/share/wallpapers"
     [ -d "$WP_DIR" ] && [ "$(ls -A "$WP_DIR")" ] && awww img "$WP_DIR/"* &
