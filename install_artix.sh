@@ -53,6 +53,9 @@ EOF'
     sudo pacman -Sy --noconfirm
     sudo pacman -S --needed --noconfirm artix-archlinux-support
 
+    # Step F: Install Arch mirrorlist (REQUIRED for extra/multilib)
+    sudo pacman -S --needed --noconfirm archlinux-mirrorlist
+
     # Step F: Add Arch repositories to pacman.conf
     if ! grep -q "\[extra\]" /etc/pacman.conf; then
         sudo bash -c 'cat <<EOF >> /etc/pacman.conf
@@ -65,17 +68,6 @@ Include = /etc/pacman.d/mirrorlist-arch
 EOF'
     fi
 
-    # Step G: Inject your chosen Arch mirrors
-    sudo bash -c 'cat <<EOF > /etc/pacman.d/mirrorlist-arch
-Server = https://mirror.osbeck.com/archlinux/\$repo/os/\$arch
-Server = http://mirror.moson.org/arch/\$repo/os/\$arch
-Server = http://archlinux.thaller.ws/\$repo/os/\$arch
-Server = http://mirror.cyberbits.eu/archlinux/\$repo/os/\$arch
-Server = http://mirror.ubrco.de/archlinux/\$repo/os/\$arch
-Server = http://mirror.trap.moe/archlinux/\$repo/os/\$arch
-Server = https://mirror.moson.org/arch/\$repo/os/\$arch
-EOF'
-    
     # Step H: Initialize Keyrings
     echo "Initializing GPG Keyrings..."
     sudo pacman-key --init
