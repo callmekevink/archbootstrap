@@ -18,8 +18,8 @@ read -p "Install Discord? [y/N]: " discord_choice
 PACMAN_CONF="/etc/pacman.conf"
 
 # 0.1 Prepare Arch Support (Provides the missing mirrorlist-arch)
-echo "Installing Arch Linux support packages..."
-sudo pacman -S --needed --noconfirm artix-archlinux-support
+echo "Installing Arch Linux support and dinit essentials..."
+sudo pacman -S --needed --noconfirm artix-archlinux-support dbus-dinit seatd-dinit
 
 # Initialize Arch keys
 sudo pacman-key --populate archlinux
@@ -37,6 +37,8 @@ if ! id "$new_user" &>/dev/null; then
     echo "Creating user $new_user..."
     sudo useradd -m -G wheel,audio,video,storage -s /bin/bash "$new_user"
     echo "$new_user:$user_pass" | sudo chpasswd
+    # Allow wheel group to use sudo
+    sudo sed -i 's/^# %wheel ALL=(ALL:ALL) ALL/%wheel ALL=(ALL:ALL) ALL/' /etc/sudoers
 fi
 
 # 1.6 Set Language (Locale)
@@ -83,31 +85,34 @@ fi
 
 # 8. Install additional packages
 if [ -f "/etc/artix-release" ]; then
-    echo "Artix system detected. Adding artix.txt packages..."
     [ -f "packages/artix.txt" ] && sudo pacman -S --needed --noconfirm - < packages/artix.txt
 fi
-
 [ -f "packages/pacman.txt" ] && sudo pacman -S --needed --noconfirm - < packages/pacman.txt
 [ -f "packages/aur.txt" ] && yay -S --needed --noconfirm - < packages/aur.txt
 
 # 9. Deploy configuration files
 [ -d "etc" ] && sudo rsync -a etc/ /etc/
 [ -d "usr" ] && sudo rsync -a usr/ /usr/
-[ -d "home" ] && rsync -a home/ "/home/$new_user/" 
+[ -d "home" ] && rsync -a home/ "/home/$new_user/"
 
-# 11. Display manager, firewall, Fish shell
+# 11. Display manager (ly) & dinit fixes
 if pacman -Qs ly >/dev/null; then
+    echo "Fixing ly dinit service path..."
     sudo pacman -S --needed --noconfirm ly-dinit || true
+    # Fix the path to /usr/bin/ly-dm in the dinit service file
+    if [ -f "/etc/dinit.d/ly" ]; then
+        sudo sed -i 's|/usr/bin/ly|/usr/bin/ly-dm|g' /etc/dinit.d/ly
+    fi
     sudo dinitctl enable ly || true
 fi
 
+# seatd is often required for Wayland compositors like niri
+sudo dinitctl enable seatd || true
+sudo dinitctl start seatd || true
+sudo usermod -aG seat "$new_user"
+
 if command -v ufw &>/dev/null; then
     sudo dinitctl start ufw || true
-    sudo ufw default deny incoming
-    sudo ufw default allow outgoing
-    sudo ufw allow ssh
-    sudo ufw allow http
-    sudo ufw allow https
     echo "y" | sudo ufw enable || true
 fi
 
@@ -119,7 +124,7 @@ fi
 # 12. Cleanup
 cd "$HOME"
 rm -rf "$CLONE_DIR"
-echo "Done. Arch extra enabled and user $new_user created."
+echo "Done."
 
 # Prompt reboot
 read -p "Reboot now? [y/N]: " confirm_reboot
