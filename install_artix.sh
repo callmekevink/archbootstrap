@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "=== Artix (dinit) + Arch repos Bootstrap ==="
+echo "=== Artix (dinit) + Arch extra Bootstrap ==="
 
 # 0. User input
 read -p "AMD or Intel Ucode? [amd/intel]: " ucode_choice
@@ -9,16 +9,13 @@ read -p "Install Vulkan? [intel/amd/no]: " vulkan_choice
 read -p "Use Fish shell? [y/N]: " fish_choice
 read -p "Install Discord? [y/N]: " discord_choice
 
-# 0.5 Backup and add extra/community repos from Arch
+# 0.5 Backup and add Arch extra repo
 PACMAN_CONF="/etc/pacman.conf"
 sudo cp "$PACMAN_CONF" "$PACMAN_CONF.bak"
 
-# Add Arch extra/community at the end if not already present
+# Append Arch extra repo if not already present
 if ! grep -q "^\[extra\]" "$PACMAN_CONF"; then
-    echo -e "\n[extra]\nInclude = /etc/pacman.d/mirrorlist-arch" | sudo tee -a "$PACMAN_CONF"
-fi
-if ! grep -q "^\[community\]" "$PACMAN_CONF"; then
-    echo -e "\n[community]\nInclude = /etc/pacman.d/mirrorlist-arch" | sudo tee -a "$PACMAN_CONF"
+    echo -e "\n[extra]\nServer = https://geo.mirror.pkgbuild.com/\$repo/os/\$arch" | sudo tee -a "$PACMAN_CONF"
 fi
 
 # 1. Install core tools
@@ -42,14 +39,14 @@ case "$vulkan_choice" in
          sudo pacman -S --needed --noconfirm vulkan-radeon vulkan-icd-loader ;;
 esac
 
-# 5. Discord (from Arch community repo now)
+# 5. Discord (from Arch extra repo)
 if [[ "$discord_choice" =~ ^[Yy]$ ]]; then
     sudo pacman -S --needed --noconfirm discord || true
 fi
 
 sudo mkinitcpio -P
 
-# 6. yay
+# 6. yay (AUR helper)
 if ! command -v yay &>/dev/null; then
     tempdir=$(mktemp -d)
     git clone https://aur.archlinux.org/yay.git "$tempdir/yay"
@@ -59,11 +56,11 @@ if ! command -v yay &>/dev/null; then
     rm -rf "$tempdir"
 fi
 
-# 7. packages install
+# 7. Install packages
 [ -f "packages/pacman.txt" ] && sudo pacman -S --needed --noconfirm - < packages/pacman.txt
 [ -f "packages/aur.txt" ] && yay -S --needed --noconfirm - < packages/aur.txt
 
-# 8. deploy files
+# 8. Deploy config files
 [ -d "etc" ] && sudo rsync -a etc/ /etc/
 [ -d "usr" ] && sudo rsync -a usr/ /usr/
 [ -d "home" ] && rsync -a home/ "$HOME/"
@@ -72,7 +69,7 @@ fi
 [ -d "$HOME/.local/share/fonts" ] && fc-cache -fv >/dev/null
 [ -d "$HOME/.local/share/applications" ] && update-desktop-database "$HOME/.local/share/applications"
 
-if command -v awww &>/dev/null; then #set wallpaper
+if command -v awww &>/dev/null; then
     pgrep awww-daemon >/dev/null || awww-daemon &
     sleep 4
     WP_DIR="$HOME/.local/share/wallpapers"
@@ -81,7 +78,7 @@ if command -v awww &>/dev/null; then #set wallpaper
     fi
 fi
 
-# 10. Display manager, firewall, fish
+# 10. Display manager, firewall, Fish
 if pacman -Qs ly >/dev/null; then
     sudo ln -sf /etc/runit/sv/ly /run/runit/service || true
 fi
@@ -103,7 +100,7 @@ if [[ "$fish_choice" =~ ^[Yy]$ ]]; then
     sudo chsh -s /usr/bin/fish "$USER"
 fi
 
-# 11. cleanup / permissions
+# 11. Cleanup / permissions
 sudo chown -R "$USER:$USER" "$HOME"
 
 cd "$HOME"
