@@ -15,13 +15,13 @@ if [ -f /etc/artix-release ]; then
     IS_ARTIX=true
     echo "Artix Linux detected. Configuring Repositories..."
 
-    # Step A: Fix System Clock (SSL/404 Fail-safe)
+    # Step A: Fix System Clock
     sudo hwclock --systohc || true
 
     # Step B: Clean up pacman.conf
     sudo sed -i '/^Include = \/etc\/pacman.d\/mirrorlist/d' /etc/pacman.conf
 
-    # Step C: Rewrite base Artix structure (Removed deprecated SyncFirst)
+    # Step C: Rewrite base Artix structure
     sudo bash -c 'cat <<EOF > /etc/pacman.conf
 [options]
 HoldPkg     = pacman libc
@@ -40,7 +40,7 @@ Include = /etc/pacman.d/mirrorlist
 Include = /etc/pacman.d/mirrorlist
 EOF'
 
-    # Step D: Inject your requested US Artix mirrors
+    # Step D: Inject your US Artix mirrors
     sudo bash -c 'cat <<EOF > /etc/pacman.d/mirrorlist
 Server = https://artix.wheaton.edu/repos/\$repo/os/\$arch
 Server = https://mirror.clarkson.edu/artix-linux/repos/\$repo/os/\$arch
@@ -53,7 +53,7 @@ EOF'
     sudo pacman -Sy --noconfirm
     sudo pacman -S --needed --noconfirm artix-archlinux-support
 
-    # Step F: Add Arch [extra] and [multilib] properly
+    # Step F: Add Arch repositories to pacman.conf
     if ! grep -q "\[extra\]" /etc/pacman.conf; then
         sudo bash -c 'cat <<EOF >> /etc/pacman.conf
 
@@ -65,19 +65,23 @@ Include = /etc/pacman.d/mirrorlist-arch
 EOF'
     fi
 
-    # Step G: Seed Arch mirrors (Global fallback)
-    echo "Server = https://geo.mirror.pkgbuild.com/\$repo/os/\$arch" | sudo tee /etc/pacman.d/mirrorlist-arch
+    # Step G: Inject your chosen Arch mirrors
+    sudo bash -c 'cat <<EOF > /etc/pacman.d/mirrorlist-arch
+Server = https://mirror.osbeck.com/archlinux/\$repo/os/\$arch
+Server = http://mirror.moson.org/arch/\$repo/os/\$arch
+Server = http://archlinux.thaller.ws/\$repo/os/\$arch
+Server = http://mirror.cyberbits.eu/archlinux/\$repo/os/\$arch
+Server = http://mirror.ubrco.de/archlinux/\$repo/os/\$arch
+Server = http://mirror.trap.moe/archlinux/\$repo/os/\$arch
+Server = https://mirror.moson.org/arch/\$repo/os/\$arch
+EOF'
     
     # Step H: Initialize Keyrings
     echo "Initializing GPG Keyrings..."
     sudo pacman-key --init
     sudo pacman-key --populate artix archlinux
     
-    echo "Optimizing Arch mirrors with reflector..."
-    sudo pacman -Sy --needed --noconfirm reflector
-    sudo reflector --latest 10 --protocol https --sort rate --save /etc/pacman.d/mirrorlist-arch
-    
-    # Final forced sync
+    # Final forced sync for everything
     sudo pacman -Syy --noconfirm
 fi
 
@@ -145,7 +149,6 @@ fi
 echo "Configuring Init Services..."
 
 if [ "$IS_ARTIX" = true ]; then
-    # Artix dinit logic
     if pacman -Qs ly-dinit >/dev/null; then
         sudo ln -s /usr/lib/dinit.d/ly /etc/dinit.d/boot.d/ || true
     fi
@@ -155,7 +158,6 @@ if [ "$IS_ARTIX" = true ]; then
         sudo ln -s /usr/lib/dinit.d/ufw /etc/dinit.d/boot.d/ || true
     fi
 else
-    # Arch systemd logic
     if pacman -Qs ly >/dev/null; then
         sudo systemctl enable ly@tty2.service
         sudo systemctl disable getty@tty2.service || true
@@ -165,7 +167,6 @@ else
     fi
 fi
 
-# Universal Firewall Rules
 if command -v ufw &>/dev/null; then
     sudo ufw default deny incoming
     sudo ufw default allow outgoing
@@ -175,13 +176,12 @@ if command -v ufw &>/dev/null; then
     echo "y" | sudo ufw enable || true
 fi
 
-# Fish Shell
 if [[ "$fish_choice" =~ ^[Yy]$ ]]; then
     ! command -v fish &>/dev/null && sudo pacman -S --noconfirm fish
     sudo chsh -s /usr/bin/fish "$USER"
 fi
 
-# 9. Cleanup / permissions
+# 9. Cleanup
 sudo chown -R "$USER:$USER" "$HOME"
 cd "$HOME"
 rm -rf "$CLONE_DIR"
