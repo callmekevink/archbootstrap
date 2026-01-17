@@ -83,10 +83,17 @@ if ! command -v yay &>/dev/null; then
 fi
 
 # ---------------------------
-# 8. Install packages
+# 8. Install packages from artix.txt
 # ---------------------------
-[ -f "packages/pacman.txt" ] && sudo pacman -S --needed --noconfirm - < packages/pacman.txt
-[ -f "packages/aur.txt" ] && yay -S --needed --noconfirm - < packages/aur.txt
+if [ -f "packages/artix.txt" ]; then
+    echo "Installing packages from packages/artix.txt..."
+    sudo pacman -S --needed --noconfirm - < packages/artix.txt
+fi
+
+# Optional: AUR packages
+if [ -f "packages/aur.txt" ]; then
+    yay -S --needed --noconfirm - < packages/aur.txt
+fi
 
 # ---------------------------
 # 9. Deploy configuration files
@@ -123,39 +130,32 @@ enable_runit_service() {
 }
 
 # ---------------------------
-# 12. Display manager (ly)
+# 12. Enable essential runit services
 # ---------------------------
-# Install ly if missing
-if ! pacman -Qs ly >/dev/null; then
-    echo "Installing ly display manager..."
-    sudo pacman -S --needed --noconfirm ly-runit
-fi
+ESSENTIAL_SERVICES=(
+    dbus-runit
+    elogind-runit
+    networkmanager-runit
+    ly-runit
+    pipewire-runit
+    wireplumber-runit
+    ufw-runit
+    bluez-runit
+)
 
-# Disable agetty on tty1 to prevent conflicts
+for svc in "${ESSENTIAL_SERVICES[@]}"; do
+    enable_runit_service "$svc"
+done
+
+# Disable agetty on tty1 to prevent conflicts with ly
 if [ -d "/etc/runit/sv/agetty-tty1" ]; then
     echo "Disabling agetty on tty1..."
     sudo sv stop agetty-tty1 || true
     sudo rm -f /run/runit/service/agetty-tty1 || true
 fi
 
-# Enable ly
-enable_runit_service ly
-
 # ---------------------------
-# 13. Firewall (UFW)
-# ---------------------------
-if command -v ufw &>/dev/null; then
-    enable_runit_service ufw
-    sudo ufw default deny incoming
-    sudo ufw default allow outgoing
-    sudo ufw allow ssh
-    sudo ufw allow http
-    sudo ufw allow https
-    sudo ufw --force enable
-fi
-
-# ---------------------------
-# 14. Fish shell
+# 13. Fish shell
 # ---------------------------
 if [[ "$fish_choice" =~ ^[Yy]$ ]]; then
     sudo pacman -S --noconfirm fish
@@ -163,7 +163,7 @@ if [[ "$fish_choice" =~ ^[Yy]$ ]]; then
 fi
 
 # ---------------------------
-# 15. Cleanup
+# 14. Cleanup
 # ---------------------------
 cd "$HOME"
 rm -rf "$CLONE_DIR"
