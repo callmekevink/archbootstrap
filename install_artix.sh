@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "=== Arch Bootstrap ==="
+echo "=== Universal Bootstrap (Arch/Artix) ==="
 
 # 0. User input
 read -p "AMD or Intel Ucode? [amd/intel]: " ucode_choice
@@ -9,7 +9,22 @@ read -p "Install Vulkan? [intel/amd/no]: " vulkan_choice
 read -p "Use Fish shell? [y/N]: " fish_choice
 read -p "Install Discord? [y/N]: " discord_choice
 
-# 1. Install core tools
+# 1. detetic if on artix
+IS_ARTIX=false
+if [ -f /etc/artix-release ]; then
+    IS_ARTIX=true
+    echo "Artix Linux detected. Configuring Arch repositories..."
+    sudo pacman -Sy --needed --noconfirm artix-archlinux-support
+    if ! grep -q "\[extra\]" /etc/pacman.conf; then
+        sudo bash -c 'cat <<EOF >> /etc/pacman.conf
+
+[extra]
+Include = /etc/pacman.d/mirrorlist-arch
+EOF'
+    fi
+fi
+
+# install base tools
 sudo pacman -Syu --needed --noconfirm base-devel git rsync
 
 # 2. Clone repo
@@ -19,7 +34,7 @@ CLONE_DIR="$HOME/arch-setup"
 git clone "$REPO_URL" "$CLONE_DIR"
 cd "$CLONE_DIR"
 
-# 3. Install questions
+# 3. install questions
 [[ "$ucode_choice" == "amd" ]] && sudo pacman -S --needed --noconfirm amd-ucode
 [[ "$ucode_choice" == "intel" ]] && sudo pacman -S --needed --noconfirm intel-ucode
 
@@ -45,11 +60,16 @@ if ! command -v yay &>/dev/null; then
     rm -rf "$tempdir"
 fi
 
-# 5. packages install
-[ -f "packages/pacman.txt" ] && sudo pacman -S --needed --noconfirm - < packages/pacman.txt
+# 5. Packages Install
+if [ "$IS_ARTIX" = true ] && [ -f "packages/artix.txt" ]; then
+    sudo pacman -S --needed --noconfirm - < packages/artix.txt
+elif [ -f "packages/pacman.txt" ]; then
+    sudo pacman -S --needed --noconfirm - < packages/pacman.txt
+fi
+
 [ -f "packages/aur.txt" ] && yay -S --needed --noconfirm - < packages/aur.txt
 
-# 6. deploy files
+# 6. Deploy files
 [ -d "etc" ] && sudo rsync -a etc/ /etc/
 [ -d "usr" ] && sudo rsync -a usr/ /usr/
 [ -d "home" ] && rsync -a home/ "$HOME/"
@@ -58,7 +78,7 @@ fi
 [ -d "$HOME/.local/share/fonts" ] && fc-cache -fv >/dev/null
 [ -d "$HOME/.local/share/applications" ] && update-desktop-database "$HOME/.local/share/applications"
 
-if command -v awww &>/dev/null; then #set wallpaper
+if command -v awww &>/dev/null; then # set wallpaper
     pgrep awww-daemon >/dev/null || awww-daemon &
     sleep 4
     WP_DIR="$HOME/.local/share/wallpapers"
@@ -67,14 +87,31 @@ if command -v awww &>/dev/null; then #set wallpaper
     fi
 fi
 
-# 8. displayermanager, firewall, fish
-if pacman -Qs ly >/dev/null; then
-    sudo systemctl enable ly@tty2.service
-    sudo systemctl disable getty@tty2.service || true
+# 8. services
+echo "Configuring Init Services..."
+
+if [ "$IS_ARTIX" = true ]; then
+    # Artix dinit logic
+    if pacman -Qs ly-dinit >/dev/null; then
+        sudo ln -s /usr/lib/dinit.d/ly /etc/dinit.d/boot.d/ || true
+    fi
+    if command -v ufw &>/dev/null; then
+        pacman -Qs ufw-dinit >/dev/null || sudo pacman -S --noconfirm ufw-dinit
+        sudo ln -s /usr/lib/dinit.d/ufw /etc/dinit.d/boot.d/ || true
+    fi
+else
+    # Arch systemd logic
+    if pacman -Qs ly >/dev/null; then
+        sudo systemctl enable ly@tty2.service
+        sudo systemctl disable getty@tty2.service || true
+    fi
+    if command -v ufw &>/dev/null; then
+        sudo systemctl enable --now ufw
+    fi
 fi
 
+# Universal Firewall Rules
 if command -v ufw &>/dev/null; then
-    sudo systemctl enable --now ufw
     sudo ufw default deny incoming
     sudo ufw default allow outgoing
     sudo ufw allow ssh
@@ -83,23 +120,19 @@ if command -v ufw &>/dev/null; then
     echo "y" | sudo ufw enable || true
 fi
 
+# Fish Shell
 if [[ "$fish_choice" =~ ^[Yy]$ ]]; then
-    if ! command -v fish &>/dev/null; then
-        sudo pacman -S --noconfirm fish
-    fi
+    ! command -v fish &>/dev/null && sudo pacman -S --noconfirm fish
     sudo chsh -s /usr/bin/fish "$USER"
 fi
 
-# 9. cleanup / permissions
+# 9. Cleanup / permissions
 sudo chown -R "$USER:$USER" "$HOME"
-
 cd "$HOME"
 rm -rf "$CLONE_DIR"
-echo "Done."
 
+echo "=== Setup Complete ==="
 read -p "Reboot now? [y/N]: " confirm_reboot
 if [[ "$confirm_reboot" =~ ^[Yy]$ ]]; then
     sudo reboot
-else
-    echo "Reboot recommended."
 fi
