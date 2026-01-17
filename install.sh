@@ -59,7 +59,7 @@ fi
 [ -d "$HOME/.local/share/applications" ] && update-desktop-database "$HOME/.local/share/applications"
 
 if command -v awww &>/dev/null; then #set wallpaper
-    pgrep awww-daemon >/dev/null || awww-daemon &
+    pgrep awww-daemon >/dev/null || awww init &
     sleep 4
     WP_DIR="$HOME/.local/share/wallpapers"
     if [ -d "$WP_DIR" ] && [ "$(ls -A "$WP_DIR")" ]; then
