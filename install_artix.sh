@@ -10,7 +10,13 @@ read -p "Use Fish shell? [y/N]: " fish_choice
 read -p "Install Discord? [y/N]: " discord_choice
 
 PACMAN_CONF="/etc/pacman.conf"
-# Backup original Artix pacman.conf
+
+# 0.5 Add temporary Arch extra repo BEFORE backup
+if ! grep -q "^\[extra-arch-temp\]" "$PACMAN_CONF"; then
+    echo -e "\n[extra-arch-temp]\nInclude = /etc/pacman.d/mirrorlist-arch" | sudo tee -a "$PACMAN_CONF"
+fi
+
+# Backup pacman.conf (includes temporary extra repo now)
 sudo cp "$PACMAN_CONF" "$PACMAN_CONF.bak"
 
 # 1. Update and install core tools (Artix repos only)
@@ -34,15 +40,10 @@ case "$vulkan_choice" in
          sudo pacman -S --needed --noconfirm vulkan-radeon vulkan-icd-loader ;;
 esac
 
-# 5. Temporary Arch extra repo for Discord only
+# 5. Install Discord from Arch extra
 if [[ "$discord_choice" =~ ^[Yy]$ ]]; then
-    # Append Arch extra if not already present
-    if ! grep -q "^\[extra-arch-temp\]" "$PACMAN_CONF"; then
-        echo -e "\n[extra-arch-temp]\nInclude = /etc/pacman.d/mirrorlist-arch" | sudo tee -a "$PACMAN_CONF"
-    fi
-    # Install Discord from Arch extra
-    sudo pacman -S --needed --noconfirm --noprogressbar --disable-download-timeout --ignore pacman,glibc,lib32-glibc,mesa discord || true
-    # Remove temporary repo to avoid overwriting system packages later
+    sudo pacman -S --needed --noconfirm --ignore pacman,glibc,lib32-glibc,mesa discord || true
+    # Remove temporary repo after install
     sudo sed -i '/\[extra-arch-temp\]/,/^$/d' "$PACMAN_CONF"
 fi
 
@@ -107,7 +108,7 @@ fi
 # 12. Cleanup / permissions
 sudo chown -R "$USER:$USER" "$HOME"
 
-# Restore original Artix pacman.conf to prevent overwriting system repos
+# Restore Artix pacman.conf to original backup (or leave temp repo if you want)
 sudo cp "$PACMAN_CONF.bak" "$PACMAN_CONF"
 
 cd "$HOME"
