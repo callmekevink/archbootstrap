@@ -16,10 +16,9 @@ if [ -f /etc/artix-release ]; then
     echo "Artix Linux detected. Configuring Repositories..."
 
     # Step A: Clean up pacman.conf to prevent cross-repo 404s
-    # Removes generic includes so we can specify them per-repository
     sudo sed -i '/^Include = \/etc\/pacman.d\/mirrorlist/d' /etc/pacman.conf
 
-    # Step B: Rewrite the base Artix repo structure
+    # Step B: Rewrite the base Artix repo structure including galaxy
     sudo bash -c 'cat <<EOF > /etc/pacman.conf
 [options]
 HoldPkg     = pacman libc
@@ -38,14 +37,15 @@ Include = /etc/pacman.d/mirrorlist
 Include = /etc/pacman.d/mirrorlist
 EOF'
 
-    # Step C: Inject reliable Artix mirrors to bootstrap the process
-    echo "Server = https://mirror.pasqualle.nl/artix-linux/\$repo/os/\$arch" | sudo tee /etc/pacman.d/mirrorlist
-    echo "Server = https://artix.scloud.at/\$repo/os/\$arch" | sudo tee -a /etc/pacman.d/mirrorlist
+    # Step C: Inject your requested Artix mirrors
+    echo "Server = https://artix.wheaton.edu/repos/\$repo/os/\$arch" | sudo tee /etc/pacman.d/mirrorlist
+    echo "Server = https://ftp.sh.cvut.cz/artix-linux/\$repo/os/\$arch" | sudo tee -a /etc/pacman.d/mirrorlist
 
-    # Step D: Install Arch Support
-    sudo pacman -Sy --needed --noconfirm artix-archlinux-support
+    # Step D: Force refresh with galaxy enabled to find support package
+    sudo pacman -Sy --noconfirm
+    sudo pacman -S --needed --noconfirm artix-archlinux-support
 
-    # Step E: Add Arch [extra] and [multilib] properly nested under their own mirrors
+    # Step E: Add Arch [extra] and [multilib] properly
     if ! grep -q "\[extra\]" /etc/pacman.conf; then
         sudo bash -c 'cat <<EOF >> /etc/pacman.conf
 
@@ -57,14 +57,13 @@ Include = /etc/pacman.d/mirrorlist-arch
 EOF'
     fi
 
-    # Step F: Seed Arch mirrors so reflector has a target to fix
+    # Step F: Seed Arch mirrors
     echo "Server = https://geo.mirror.pkgbuild.com/\$repo/os/\$arch" | sudo tee /etc/pacman.d/mirrorlist-arch
     
     echo "Optimizing Arch mirrors..."
     sudo pacman -Sy --needed --noconfirm reflector
     sudo reflector --latest 10 --protocol https --sort rate --save /etc/pacman.d/mirrorlist-arch
     
-    # Final sync and keyring update for both Artix and Arch
     sudo pacman -Syy --noconfirm archlinux-keyring artix-keyring
 fi
 
