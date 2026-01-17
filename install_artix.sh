@@ -14,7 +14,9 @@ IS_ARTIX=false
 if [ -f /etc/artix-release ]; then
     IS_ARTIX=true
     echo "Artix Linux detected. Configuring Arch repositories..."
+    # Ensure databases are synced before installing support package
     sudo pacman -Sy --needed --noconfirm artix-archlinux-support
+    
     if ! grep -q "\[extra\]" /etc/pacman.conf; then
         sudo bash -c 'cat <<EOF >> /etc/pacman.conf
 
@@ -22,6 +24,8 @@ if [ -f /etc/artix-release ]; then
 Include = /etc/pacman.d/mirrorlist-arch
 EOF'
     fi
+    # Refresh and initialize Arch keyrings
+    sudo pacman -Sy --noconfirm archlinux-keyring
 fi
 
 # install base tools
@@ -96,6 +100,8 @@ if [ "$IS_ARTIX" = true ]; then
         sudo ln -s /usr/lib/dinit.d/ly /etc/dinit.d/boot.d/ || true
     fi
     if command -v ufw &>/dev/null; then
+        #sync database
+        sudo pacman -Sy
         pacman -Qs ufw-dinit >/dev/null || sudo pacman -S --noconfirm ufw-dinit
         sudo ln -s /usr/lib/dinit.d/ufw /etc/dinit.d/boot.d/ || true
     fi
