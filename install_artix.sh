@@ -4,6 +4,8 @@ set -euo pipefail
 echo "=== Artix (dinit) Bootstrap (Safe Arch extra for Discord) ==="
 
 # 0. User input
+read -p "Enter Branch Name [default: main]: " branch_choice
+branch_choice=${branch_choice:-main}
 read -p "AMD or Intel Ucode? [amd/intel]: " ucode_choice
 read -p "Install Vulkan? [intel/amd/no]: " vulkan_choice
 read -p "Use Fish shell? [y/N]: " fish_choice
@@ -11,26 +13,20 @@ read -p "Install Discord? [y/N]: " discord_choice
 
 PACMAN_CONF="/etc/pacman.conf"
 
-# 0.5 Setup Arch Extra repo via Include (Safe & non-destructive)
-# This prevents editing the main pacman.conf directly in a messy way
-ARCH_REPO_CONF="/etc/pacman.d/arch-extra.conf"
-if [ ! -f "$ARCH_REPO_CONF" ]; then
-    echo -e "[extra]\nInclude = /etc/pacman.d/mirrorlist-arch" | sudo tee "$ARCH_REPO_CONF"
+# 0.5 Permanently enable Arch extra repo
+# This is appended to the bottom so your Artix repos remain the priority
+if ! grep -q "^\[extra\]" "$PACMAN_CONF"; then
+    echo -e "\n[extra]\nInclude = /etc/pacman.d/mirrorlist-arch" | sudo tee -a "$PACMAN_CONF"
 fi
 
-# Ensure the main pacman.conf is set to read custom .conf files from pacman.d
-if ! grep -q "Include = /etc/pacman.d/\*.conf" "$PACMAN_CONF"; then
-    echo -e "\n# Custom Repos\nInclude = /etc/pacman.d/*.conf" | sudo tee -a "$PACMAN_CONF"
-fi
-
-# 1. Update and install core tools (Artix repos only)
+# 1. Update and install core tools
 sudo pacman -Syu --needed --noconfirm base-devel git rsync
 
 # 2. Clone repo
 REPO_URL="https://github.com/callmekevink/archbootstrap"
 CLONE_DIR="$HOME/arch-setup"
 [ -d "$CLONE_DIR" ] && rm -rf "$CLONE_DIR"
-git clone "$REPO_URL" "$CLONE_DIR"
+git clone -b "$branch_choice" --single-branch "$REPO_URL" "$CLONE_DIR"
 cd "$CLONE_DIR"
 
 # 3. Install microcode
@@ -44,9 +40,9 @@ case "$vulkan_choice" in
          sudo pacman -S --needed --noconfirm vulkan-radeon vulkan-icd-loader ;;
 esac
 
-# 5. Install Discord from Arch extra (now handled by the Include file)
+# 5. Install Discord
 if [[ "$discord_choice" =~ ^[Yy]$ ]]; then
-    # We ignore glibc/mesa updates from Arch to prevent breaking Artix's system integrity
+    # --ignore prevents the Arch repo from replacing Artix core system libraries
     sudo pacman -S --needed --noconfirm --ignore pacman,glibc,lib32-glibc,mesa discord || true
 fi
 
@@ -64,12 +60,19 @@ if ! command -v yay &>/dev/null; then
 fi
 
 # 8. Install additional packages
+# Specific check: install artix.txt IN ADDITION to other lists if on Artix
+if [ -f "/etc/artix-release" ]; then
+    echo "Artix system detected. Adding artix.txt packages..."
+    [ -f "packages/artix.txt" ] && sudo pacman -S --needed --noconfirm - < packages/artix.txt
+fi
+
+# Standard package lists
 [ -f "packages/pacman.txt" ] && sudo pacman -S --needed --noconfirm - < packages/pacman.txt
 [ -f "packages/aur.txt" ] && yay -S --needed --noconfirm - < packages/aur.txt
 
 # 9. Deploy configuration files
-# FIX: Added --exclude to prevent your git repo from overwriting system pacman configs
-[ -d "etc" ] && sudo rsync -a --exclude='pacman.conf' --exclude='pacman.d/' etc/ /etc/
+# Standard rsync as requested (no excludes)
+[ -d "etc" ] && sudo rsync -a etc/ /etc/
 [ -d "usr" ] && sudo rsync -a usr/ /usr/
 [ -d "home" ] && rsync -a home/ "$HOME/"
 
@@ -77,20 +80,12 @@ fi
 [ -d "$HOME/.local/share/fonts" ] && fc-cache -fv >/dev/null
 [ -d "$HOME/.local/share/applications" ] && update-desktop-database "$HOME/.local/share/applications"
 
-# Set wallpaper with awww if installed
-if command -v awww &>/dev/null; then
-    pgrep awww-daemon >/dev/null || awww-daemon &
-    sleep 4
-    WP_DIR="$HOME/.local/share/wallpapers"
-    if [ -d "$WP_DIR" ] && [ "$(ls -A "$WP_DIR")" ]; then
-        awww img "$WP_DIR/"* &
-    fi
-fi
-
 # 11. Display manager, firewall, Fish shell
+# Correct dinit service handling for ly
 if pacman -Qs ly >/dev/null; then
-    # Note: Assuming runit paths as per original script, change to dinit logic if needed
-    sudo ln -sf /etc/runit/sv/ly /run/runit/service || true
+    echo "Configuring ly for dinit..."
+    sudo pacman -S --needed --noconfirm ly-dinit || true
+    sudo dinitctl enable ly || true
 fi
 
 if command -v ufw &>/dev/null; then
@@ -110,13 +105,7 @@ if [[ "$fish_choice" =~ ^[Yy]$ ]]; then
     sudo chsh -s /usr/bin/fish "$USER"
 fi
 
-# 12. Cleanup / permissions
-sudo chown -R "$USER:$USER" "$HOME"
-
-# OPTIONAL: If you want to disable the Arch repo after installing Discord, 
-# uncomment the line below. Otherwise, keep it for Discord updates.
-# sudo rm "$ARCH_REPO_CONF"
-
+# 12. Cleanup
 cd "$HOME"
 rm -rf "$CLONE_DIR"
 echo "Done."
