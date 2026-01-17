@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-echo "=== Artix (dinit) + Arch extra Bootstrap ==="
+echo "=== Artix (dinit) Bootstrap (Safe Arch extra for Discord) ==="
 
 # 0. User input
 read -p "AMD or Intel Ucode? [amd/intel]: " ucode_choice
@@ -9,16 +9,11 @@ read -p "Install Vulkan? [intel/amd/no]: " vulkan_choice
 read -p "Use Fish shell? [y/N]: " fish_choice
 read -p "Install Discord? [y/N]: " discord_choice
 
-# 0.5 Backup and add Arch extra repo
 PACMAN_CONF="/etc/pacman.conf"
+# Backup original Artix pacman.conf
 sudo cp "$PACMAN_CONF" "$PACMAN_CONF.bak"
 
-# Append Arch extra repo if not already present
-if ! grep -q "^\[extra\]" "$PACMAN_CONF"; then
-    echo -e "\n[extra]\nServer = https://geo.mirror.pkgbuild.com/\$repo/os/\$arch" | sudo tee -a "$PACMAN_CONF"
-fi
-
-# 1. Install core tools
+# 1. Update and install core tools (Artix repos only)
 sudo pacman -Syu --needed --noconfirm base-devel git rsync
 
 # 2. Clone repo
@@ -39,14 +34,22 @@ case "$vulkan_choice" in
          sudo pacman -S --needed --noconfirm vulkan-radeon vulkan-icd-loader ;;
 esac
 
-# 5. Discord (from Arch extra repo)
+# 5. Temporary Arch extra repo for Discord only
 if [[ "$discord_choice" =~ ^[Yy]$ ]]; then
-    sudo pacman -S --needed --noconfirm discord || true
+    # Append Arch extra if not already present
+    if ! grep -q "^\[extra-arch-temp\]" "$PACMAN_CONF"; then
+        echo -e "\n[extra-arch-temp]\nInclude = /etc/pacman.d/mirrorlist-arch" | sudo tee -a "$PACMAN_CONF"
+    fi
+    # Install Discord from Arch extra
+    sudo pacman -S --needed --noconfirm --noprogressbar --disable-download-timeout --ignore pacman,glibc,lib32-glibc,mesa discord || true
+    # Remove temporary repo to avoid overwriting system packages later
+    sudo sed -i '/\[extra-arch-temp\]/,/^$/d' "$PACMAN_CONF"
 fi
 
+# 6. Re-generate initramfs
 sudo mkinitcpio -P
 
-# 6. yay (AUR helper)
+# 7. yay (AUR helper)
 if ! command -v yay &>/dev/null; then
     tempdir=$(mktemp -d)
     git clone https://aur.archlinux.org/yay.git "$tempdir/yay"
@@ -56,19 +59,20 @@ if ! command -v yay &>/dev/null; then
     rm -rf "$tempdir"
 fi
 
-# 7. Install packages
+# 8. Install additional packages
 [ -f "packages/pacman.txt" ] && sudo pacman -S --needed --noconfirm - < packages/pacman.txt
 [ -f "packages/aur.txt" ] && yay -S --needed --noconfirm - < packages/aur.txt
 
-# 8. Deploy config files
+# 9. Deploy configuration files
 [ -d "etc" ] && sudo rsync -a etc/ /etc/
 [ -d "usr" ] && sudo rsync -a usr/ /usr/
 [ -d "home" ] && rsync -a home/ "$HOME/"
 
-# 9. Update system caches
+# 10. Update system caches
 [ -d "$HOME/.local/share/fonts" ] && fc-cache -fv >/dev/null
 [ -d "$HOME/.local/share/applications" ] && update-desktop-database "$HOME/.local/share/applications"
 
+# Set wallpaper with awww if installed
 if command -v awww &>/dev/null; then
     pgrep awww-daemon >/dev/null || awww-daemon &
     sleep 4
@@ -78,7 +82,7 @@ if command -v awww &>/dev/null; then
     fi
 fi
 
-# 10. Display manager, firewall, Fish
+# 11. Display manager, firewall, Fish shell
 if pacman -Qs ly >/dev/null; then
     sudo ln -sf /etc/runit/sv/ly /run/runit/service || true
 fi
@@ -100,13 +104,17 @@ if [[ "$fish_choice" =~ ^[Yy]$ ]]; then
     sudo chsh -s /usr/bin/fish "$USER"
 fi
 
-# 11. Cleanup / permissions
+# 12. Cleanup / permissions
 sudo chown -R "$USER:$USER" "$HOME"
+
+# Restore original Artix pacman.conf to prevent overwriting system repos
+sudo cp "$PACMAN_CONF.bak" "$PACMAN_CONF"
 
 cd "$HOME"
 rm -rf "$CLONE_DIR"
 echo "Done."
 
+# Prompt reboot
 read -p "Reboot now? [y/N]: " confirm_reboot
 if [[ "$confirm_reboot" =~ ^[Yy]$ ]]; then
     sudo reboot
