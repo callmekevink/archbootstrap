@@ -137,8 +137,6 @@ ESSENTIAL_SERVICES=(
     elogind-runit
     networkmanager-runit
     ly-runit
-    pipewire-runit
-    wireplumber-runit
     ufw-runit
     bluez-runit
 )
