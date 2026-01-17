@@ -15,17 +15,20 @@ if [ -f /etc/artix-release ]; then
     IS_ARTIX=true
     echo "Artix Linux detected. Configuring Repositories..."
 
-    # Step A: Clean up pacman.conf
+    # Step A: Fix System Clock (SSL/404 Fail-safe)
+    sudo hwclock --systohc || true
+
+    # Step B: Clean up pacman.conf
     sudo sed -i '/^Include = \/etc\/pacman.d\/mirrorlist/d' /etc/pacman.conf
 
-    # Step B: Rewrite base Artix structure
+    # Step C: Rewrite base Artix structure (Removed deprecated SyncFirst)
     sudo bash -c 'cat <<EOF > /etc/pacman.conf
 [options]
 HoldPkg     = pacman libc
-SyncFirst   = artix-keyring
 Architecture = auto
 SigLevel    = Required DatabaseOptional
 LocalFileSigLevel = Optional
+ParallelDownloads = 5
 
 [system]
 Include = /etc/pacman.d/mirrorlist
@@ -37,15 +40,20 @@ Include = /etc/pacman.d/mirrorlist
 Include = /etc/pacman.d/mirrorlist
 EOF'
 
-    # Step C: Inject requested Artix mirrors
-    echo "Server = https://artix.wheaton.edu/repos/\$repo/os/\$arch" | sudo tee /etc/pacman.d/mirrorlist
-    echo "Server = https://ftp.sh.cvut.cz/artix-linux/\$repo/os/\$arch" | sudo tee -a /etc/pacman.d/mirrorlist
+    # Step D: Inject your requested US Artix mirrors
+    sudo bash -c 'cat <<EOF > /etc/pacman.d/mirrorlist
+Server = https://artix.wheaton.edu/repos/\$repo/os/\$arch
+Server = https://mirror.clarkson.edu/artix-linux/repos/\$repo/os/\$arch
+Server = https://us-mirror.artixlinux.org/\$repo/os/\$arch
+Server = http://www.nylxs.com/mirror/repos/\$repo/os/\$arch
+Server = https://mirrors.nettek.us/artix-linux/\$repo/os/\$arch
+EOF'
 
-    # Step D: Sync Artix and install support
+    # Step E: Sync Artix and install support
     sudo pacman -Sy --noconfirm
     sudo pacman -S --needed --noconfirm artix-archlinux-support
 
-    # Step E: Add Arch [extra] and [multilib]
+    # Step F: Add Arch [extra] and [multilib] properly
     if ! grep -q "\[extra\]" /etc/pacman.conf; then
         sudo bash -c 'cat <<EOF >> /etc/pacman.conf
 
@@ -57,24 +65,21 @@ Include = /etc/pacman.d/mirrorlist-arch
 EOF'
     fi
 
-    # Step F: Seed Arch mirrors with a high-reliability global mirror
+    # Step G: Seed Arch mirrors (Global fallback)
     echo "Server = https://geo.mirror.pkgbuild.com/\$repo/os/\$arch" | sudo tee /etc/pacman.d/mirrorlist-arch
     
-    # Step G: CRITICAL - Initialize Keyrings
-    echo "Initializing GPG Keyrings (this may take a minute)..."
+    # Step H: Initialize Keyrings
+    echo "Initializing GPG Keyrings..."
     sudo pacman-key --init
     sudo pacman-key --populate artix archlinux
     
-    echo "Optimizing Arch mirrors..."
+    echo "Optimizing Arch mirrors with reflector..."
     sudo pacman -Sy --needed --noconfirm reflector
     sudo reflector --latest 10 --protocol https --sort rate --save /etc/pacman.d/mirrorlist-arch
     
-    # Force a double-refresh to ensure [extra] is downloaded
+    # Final forced sync
     sudo pacman -Syy --noconfirm
 fi
-
-# install base tools
-sudo pacman -Syu --needed --noconfirm base-devel git rsync
 
 # 2. Clone repo
 REPO_URL="https://github.com/callmekevink/archbootstrap"
