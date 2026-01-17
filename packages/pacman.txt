@@ -32,7 +32,6 @@ niri
 nwg-look
 otf-aurulent-nerd
 pipewire-alsa
-pipewire-jack
 pipewire-pulse
 rofi
 timeshift
