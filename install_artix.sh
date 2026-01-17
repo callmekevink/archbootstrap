@@ -15,14 +15,19 @@ if [ -f /etc/artix-release ]; then
     IS_ARTIX=true
     echo "Artix Linux detected. Configuring Arch repositories..."
     
-    # EMERGENCY OVERRIDE: If pacman is 404ing, manually write a reliable mirror
-    echo "Pre-priming Artix mirrors via curl to prevent 404s..."
-    sudo bash -c 'echo "Server = https://mirror.pasqualle.nl/artix-linux/\$repo/os/\$arch" > /etc/pacman.d/mirrorlist'
-    sudo bash -c 'echo "Server = https://artix.scloud.at/\$repo/os/\$arch" >> /etc/pacman.d/mirrorlist'
+    # Fix Artix repository naming mismatch (system/world vs core/extra)
+    # This prevents 404s caused by looking for 'core' on Artix mirrors
+    sudo sed -i 's/\[core\]/\[system\]/g' /etc/pacman.conf
+    sudo sed -i 's/\[extra\]/\[world\]/g' /etc/pacman.conf
+    sudo sed -i 's/\[community\]/\[galaxy\]/g' /etc/pacman.conf
 
-    # Now sync should work
-    sudo pacman -Sy --needed --noconfirm artix-mirrorlist artix-archlinux-support
+    # Inject reliable mirrors directly to avoid broken initial mirrorlist
+    echo "Server = https://mirror.pasqualle.nl/artix-linux/\$repo/os/\$arch" | sudo tee /etc/pacman.d/mirrorlist
+    echo "Server = https://artix.scloud.at/\$repo/os/\$arch" | sudo tee -a /etc/pacman.d/mirrorlist
 
+    # Sync and get Arch support
+    sudo pacman -Sy --needed --noconfirm artix-archlinux-support
+    
     if ! grep -q "\[extra\]" /etc/pacman.conf; then
         sudo bash -c 'cat <<EOF >> /etc/pacman.conf
 
@@ -31,13 +36,10 @@ Include = /etc/pacman.d/mirrorlist-arch
 EOF'
     fi
 
-    # Manually seed Arch mirrors if they don't exist yet to prevent reflector failing
-    if [ ! -s /etc/pacman.d/mirrorlist-arch ]; then
-        echo "Seeding Arch mirrors..."
-        sudo bash -c 'echo "Server = https://geo.mirror.pkgbuild.com/\$repo/os/\$arch" > /etc/pacman.d/mirrorlist-arch'
-    fi
-
-    echo "Optimizing mirrors with reflector..."
+    # Seed Arch mirrors so pacman can find 'extra' and 'reflector'
+    echo "Server = https://geo.mirror.pkgbuild.com/\$repo/os/\$arch" | sudo tee /etc/pacman.d/mirrorlist-arch
+    
+    echo "Optimizing mirrors..."
     sudo pacman -Sy --needed --noconfirm reflector
     sudo reflector --latest 10 --protocol https --sort rate --save /etc/pacman.d/mirrorlist-arch
     
