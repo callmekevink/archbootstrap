@@ -56,6 +56,16 @@ EOF'
     # Step F: Install Arch mirrorlist (REQUIRED for extra/multilib)
     sudo pacman -S --needed --noconfirm archlinux-mirrorlist
 
+    # Step F.1: Filter Arch mirrors to known-good HTTPS only (prevents 404s)
+    sudo sed -i \
+        -e '/^Server = http:/d' \
+        -e '/tier =/d' \
+        /etc/pacman.d/mirrorlist-arch
+
+    # Step F.2: Force a known working Arch mirror to the top
+    sudo sed -i '1i Server = https://geo.mirror.pkgbuild.com/\$repo/os/\$arch' \
+        /etc/pacman.d/mirrorlist-arch
+
     # Step F: Add Arch repositories to pacman.conf
     if ! grep -q "\[extra\]" /etc/pacman.conf; then
         sudo bash -c 'cat <<EOF >> /etc/pacman.conf
@@ -72,7 +82,7 @@ EOF'
     echo "Initializing GPG Keyrings..."
     sudo pacman-key --init
     sudo pacman-key --populate artix archlinux
-    
+
     # Final forced sync for everything
     sudo pacman -Syy --noconfirm
 fi
