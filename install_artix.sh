@@ -9,7 +9,7 @@ read -p "Install Vulkan? [intel/amd/no]: " vulkan_choice
 read -p "Use Fish shell? [y/N]: " fish_choice
 read -p "Install Discord? [y/N]: " discord_choice
 
-# 1. detetic if on artix
+# 1. detect if on artix
 IS_ARTIX=false
 if [ -f /etc/artix-release ]; then
     IS_ARTIX=true
@@ -18,58 +18,26 @@ if [ -f /etc/artix-release ]; then
     # Step A: Fix System Clock
     sudo hwclock --systohc || true
 
-    # Step B: Clean up pacman.conf
-    sudo sed -i '/^Include = \/etc\/pacman.d\/mirrorlist/d' /etc/pacman.conf
-
-    # Step C: Rewrite base Artix structure
-    sudo bash -c 'cat <<EOF > /etc/pacman.conf
-[options]
-HoldPkg     = pacman libc
-Architecture = auto
-SigLevel    = Required DatabaseOptional
-LocalFileSigLevel = Optional
-ParallelDownloads = 5
-
-[system]
-Include = /etc/pacman.d/mirrorlist
-
-[world]
-Include = /etc/pacman.d/mirrorlist
-
-[galaxy]
-Include = /etc/pacman.d/mirrorlist
-EOF'
-
-    # Step D: Inject your US Artix mirrors
-    sudo bash -c 'cat <<EOF > /etc/pacman.d/mirrorlist
-Server = https://artix.wheaton.edu/repos/\$repo/os/\$arch
-Server = https://mirror.clarkson.edu/artix-linux/repos/\$repo/os/\$arch
-Server = https://us-mirror.artixlinux.org/\$repo/os/\$arch
-Server = http://www.nylxs.com/mirror/repos/\$repo/os/\$arch
-Server = https://mirrors.nettek.us/artix-linux/\$repo/os/\$arch
-EOF'
-
-    # Step E: Sync Artix and install support
+    # Step B: Sync base Artix system
     sudo pacman -Sy --noconfirm
+
+    # Step C: Install Arch compatibility layer
     sudo pacman -S --needed --noconfirm artix-archlinux-support
 
-    # Step F: Install Arch mirrorlist (REQUIRED for extra/multilib)
+    # Step D: Install Arch mirrorlist
     sudo pacman -S --needed --noconfirm archlinux-mirrorlist
 
-    # Step F.1: Filter Arch mirrors to known-good HTTPS only (prevents 404s)
-    sudo sed -i \
-        -e '/^Server = http:/d' \
-        -e '/tier =/d' \
+    # Step E: Sanitize Arch mirrors (prevents 404s)
+    sudo sed -i '/^Server = http:/d' /etc/pacman.d/mirrorlist-arch
+    sudo sed -i '/^#/d' /etc/pacman.d/mirrorlist-arch
+    sudo sed -i '1i Server = https://geo.mirror.pkgbuild.com/$repo/os/$arch' \
         /etc/pacman.d/mirrorlist-arch
 
-    # Step F.2: Force a known working Arch mirror to the top
-    sudo sed -i '1i Server = https://geo.mirror.pkgbuild.com/\$repo/os/\$arch' \
-        /etc/pacman.d/mirrorlist-arch
-
-    # Step F: Add Arch repositories to pacman.conf
-    if ! grep -q "\[extra\]" /etc/pacman.conf; then
+    # Step F: Add Arch repositories (append-only, safe)
+    if ! grep -q '^\[extra\]' /etc/pacman.conf; then
         sudo bash -c 'cat <<EOF >> /etc/pacman.conf
 
+# Arch Linux repositories
 [extra]
 Include = /etc/pacman.d/mirrorlist-arch
 
@@ -78,19 +46,18 @@ Include = /etc/pacman.d/mirrorlist-arch
 EOF'
     fi
 
-    # Step H: Initialize Keyrings
-    echo "Initializing GPG Keyrings..."
+    # Step G: Initialize Keyrings
     sudo pacman-key --init
     sudo pacman-key --populate artix archlinux
 
-    # Final forced sync for everything
+    # Step H: Full resync
     sudo pacman -Syy --noconfirm
 fi
 
 # 2. Clone repo
 REPO_URL="https://github.com/callmekevink/archbootstrap"
 CLONE_DIR="$HOME/arch-setup"
-[ -d "$CLONE_DIR" ] && rm -rf "$CLONE_DIR"
+rm -rf "$CLONE_DIR"
 git clone "$REPO_URL" "$CLONE_DIR"
 cd "$CLONE_DIR"
 
@@ -99,9 +66,13 @@ cd "$CLONE_DIR"
 [[ "$ucode_choice" == "intel" ]] && sudo pacman -S --needed --noconfirm intel-ucode
 
 case "$vulkan_choice" in
-    intel) sudo pacman -S --needed --noconfirm vulkan-intel vulkan-icd-loader ;;
-    amd) sudo pacman -R --noconfirm amdvlk || true
-         sudo pacman -S --needed --noconfirm vulkan-radeon vulkan-icd-loader ;;
+    intel)
+        sudo pacman -S --needed --noconfirm vulkan-intel vulkan-icd-loader
+        ;;
+    amd)
+        sudo pacman -R --noconfirm amdvlk || true
+        sudo pacman -S --needed --noconfirm vulkan-radeon vulkan-icd-loader
+        ;;
 esac
 
 if [[ "$discord_choice" =~ ^[Yy]$ ]]; then
@@ -138,26 +109,16 @@ fi
 [ -d "$HOME/.local/share/fonts" ] && fc-cache -fv >/dev/null
 [ -d "$HOME/.local/share/applications" ] && update-desktop-database "$HOME/.local/share/applications"
 
-if command -v awww &>/dev/null; then # set wallpaper
-    pgrep awww-daemon >/dev/null || awww-daemon &
-    sleep 4
-    WP_DIR="$HOME/.local/share/wallpapers"
-    if [ -d "$WP_DIR" ] && [ "$(ls -A "$WP_DIR")" ]; then
-        awww img "$WP_DIR/"* &
-    fi
-fi
-
 # 8. services
 echo "Configuring Init Services..."
 
 if [ "$IS_ARTIX" = true ]; then
     if pacman -Qs ly-dinit >/dev/null; then
-        sudo ln -s /usr/lib/dinit.d/ly /etc/dinit.d/boot.d/ || true
+        sudo ln -sf /usr/lib/dinit.d/ly /etc/dinit.d/boot.d/ly
     fi
     if command -v ufw &>/dev/null; then
-        sudo pacman -Sy
         pacman -Qs ufw-dinit >/dev/null || sudo pacman -S --noconfirm ufw-dinit
-        sudo ln -s /usr/lib/dinit.d/ufw /etc/dinit.d/boot.d/ || true
+        sudo ln -sf /usr/lib/dinit.d/ufw /etc/dinit.d/boot.d/ufw
     fi
 else
     if pacman -Qs ly >/dev/null; then
@@ -179,13 +140,12 @@ if command -v ufw &>/dev/null; then
 fi
 
 if [[ "$fish_choice" =~ ^[Yy]$ ]]; then
-    ! command -v fish &>/dev/null && sudo pacman -S --noconfirm fish
+    sudo pacman -S --needed --noconfirm fish
     sudo chsh -s /usr/bin/fish "$USER"
 fi
 
 # 9. Cleanup
 sudo chown -R "$USER:$USER" "$HOME"
-cd "$HOME"
 rm -rf "$CLONE_DIR"
 
 echo "=== Setup Complete ==="
