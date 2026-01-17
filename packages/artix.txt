@@ -1,8 +1,8 @@
-dbus-dinit
-elogind-dinit
-networkmanager-dinit
-ly-dinit
-pipewire-dinit
-wireplumber-dinit
-ufw-dinit
-bluez-dinit
+dbus-runit
+elogind-runit
+networkmanager-runit
+ly-runit
+pipewire-runit
+wireplumber-runit
+ufw-runit
+bluez-runit
