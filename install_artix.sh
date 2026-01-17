@@ -11,13 +11,17 @@ read -p "Install Discord? [y/N]: " discord_choice
 
 PACMAN_CONF="/etc/pacman.conf"
 
-# 0.5 Add temporary Arch extra repo BEFORE backup
-if ! grep -q "^\[extra-arch-temp\]" "$PACMAN_CONF"; then
-    echo -e "\n[extra-arch-temp]\nInclude = /etc/pacman.d/mirrorlist-arch" | sudo tee -a "$PACMAN_CONF"
+# 0.5 Setup Arch Extra repo via Include (Safe & non-destructive)
+# This prevents editing the main pacman.conf directly in a messy way
+ARCH_REPO_CONF="/etc/pacman.d/arch-extra.conf"
+if [ ! -f "$ARCH_REPO_CONF" ]; then
+    echo -e "[extra]\nInclude = /etc/pacman.d/mirrorlist-arch" | sudo tee "$ARCH_REPO_CONF"
 fi
 
-# Backup pacman.conf (includes temporary extra repo now)
-sudo cp "$PACMAN_CONF" "$PACMAN_CONF.bak"
+# Ensure the main pacman.conf is set to read custom .conf files from pacman.d
+if ! grep -q "Include = /etc/pacman.d/\*.conf" "$PACMAN_CONF"; then
+    echo -e "\n# Custom Repos\nInclude = /etc/pacman.d/*.conf" | sudo tee -a "$PACMAN_CONF"
+fi
 
 # 1. Update and install core tools (Artix repos only)
 sudo pacman -Syu --needed --noconfirm base-devel git rsync
@@ -40,11 +44,10 @@ case "$vulkan_choice" in
          sudo pacman -S --needed --noconfirm vulkan-radeon vulkan-icd-loader ;;
 esac
 
-# 5. Install Discord from Arch extra
+# 5. Install Discord from Arch extra (now handled by the Include file)
 if [[ "$discord_choice" =~ ^[Yy]$ ]]; then
+    # We ignore glibc/mesa updates from Arch to prevent breaking Artix's system integrity
     sudo pacman -S --needed --noconfirm --ignore pacman,glibc,lib32-glibc,mesa discord || true
-    # Remove temporary repo after install
-    sudo sed -i '/\[extra-arch-temp\]/,/^$/d' "$PACMAN_CONF"
 fi
 
 # 6. Re-generate initramfs
@@ -65,7 +68,8 @@ fi
 [ -f "packages/aur.txt" ] && yay -S --needed --noconfirm - < packages/aur.txt
 
 # 9. Deploy configuration files
-[ -d "etc" ] && sudo rsync -a etc/ /etc/
+# FIX: Added --exclude to prevent your git repo from overwriting system pacman configs
+[ -d "etc" ] && sudo rsync -a --exclude='pacman.conf' --exclude='pacman.d/' etc/ /etc/
 [ -d "usr" ] && sudo rsync -a usr/ /usr/
 [ -d "home" ] && rsync -a home/ "$HOME/"
 
@@ -85,6 +89,7 @@ fi
 
 # 11. Display manager, firewall, Fish shell
 if pacman -Qs ly >/dev/null; then
+    # Note: Assuming runit paths as per original script, change to dinit logic if needed
     sudo ln -sf /etc/runit/sv/ly /run/runit/service || true
 fi
 
@@ -108,8 +113,9 @@ fi
 # 12. Cleanup / permissions
 sudo chown -R "$USER:$USER" "$HOME"
 
-# Restore Artix pacman.conf to original backup (or leave temp repo if you want)
-sudo cp "$PACMAN_CONF.bak" "$PACMAN_CONF"
+# OPTIONAL: If you want to disable the Arch repo after installing Discord, 
+# uncomment the line below. Otherwise, keep it for Discord updates.
+# sudo rm "$ARCH_REPO_CONF"
 
 cd "$HOME"
 rm -rf "$CLONE_DIR"
