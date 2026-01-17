@@ -90,8 +90,7 @@ if [[ "$fish_choice" =~ ^[Yy]$ ]]; then
     sudo chsh -s /usr/bin/fish "$USER"
 fi
 
-# 9. cleanup / permissions
-sudo chown -R "$USER:$USER" "$HOME"
+# 9. cleanup 
 
 cd "$HOME"
 rm -rf "$CLONE_DIR"
