@@ -6,6 +6,10 @@ echo "=== Artix (dinit) Bootstrap (Safe Arch extra for Discord) ==="
 # 0. User input
 read -p "Enter Branch Name [default: main]: " branch_choice
 branch_choice=${branch_choice:-main}
+read -p "New Username to create: " new_user
+read -sp "Password for $new_user: " user_pass
+echo ""
+read -p "System Language (e.g., en_US.UTF-8): " sys_lang
 read -p "AMD or Intel Ucode? [amd/intel]: " ucode_choice
 read -p "Install Vulkan? [intel/amd/no]: " vulkan_choice
 read -p "Use Fish shell? [y/N]: " fish_choice
@@ -13,14 +17,33 @@ read -p "Install Discord? [y/N]: " discord_choice
 
 PACMAN_CONF="/etc/pacman.conf"
 
+# 0.1 Prepare Arch Support (Provides the missing mirrorlist-arch)
+echo "Installing Arch Linux support packages..."
+sudo pacman -S --needed --noconfirm artix-archlinux-support
+
+# Initialize Arch keys
+sudo pacman-key --populate archlinux
+
 # 0.5 Permanently enable Arch extra repo
-# This is appended to the bottom so your Artix repos remain the priority
 if ! grep -q "^\[extra\]" "$PACMAN_CONF"; then
     echo -e "\n[extra]\nInclude = /etc/pacman.d/mirrorlist-arch" | sudo tee -a "$PACMAN_CONF"
 fi
 
 # 1. Update and install core tools
 sudo pacman -Syu --needed --noconfirm base-devel git rsync
+
+# 1.5 Create User and Home Directory
+if ! id "$new_user" &>/dev/null; then
+    echo "Creating user $new_user..."
+    sudo useradd -m -G wheel,audio,video,storage -s /bin/bash "$new_user"
+    echo "$new_user:$user_pass" | sudo chpasswd
+fi
+
+# 1.6 Set Language (Locale)
+echo "Setting system language to $sys_lang..."
+sudo sed -i "s/^#$sys_lang/$sys_lang/" /etc/locale.gen
+sudo locale-gen
+echo "LANG=$sys_lang" | sudo tee /etc/locale.conf
 
 # 2. Clone repo
 REPO_URL="https://github.com/callmekevink/archbootstrap"
@@ -42,7 +65,6 @@ esac
 
 # 5. Install Discord
 if [[ "$discord_choice" =~ ^[Yy]$ ]]; then
-    # --ignore prevents the Arch repo from replacing Artix core system libraries
     sudo pacman -S --needed --noconfirm --ignore pacman,glibc,lib32-glibc,mesa discord || true
 fi
 
@@ -60,30 +82,21 @@ if ! command -v yay &>/dev/null; then
 fi
 
 # 8. Install additional packages
-# Specific check: install artix.txt IN ADDITION to other lists if on Artix
 if [ -f "/etc/artix-release" ]; then
     echo "Artix system detected. Adding artix.txt packages..."
     [ -f "packages/artix.txt" ] && sudo pacman -S --needed --noconfirm - < packages/artix.txt
 fi
 
-# Standard package lists
 [ -f "packages/pacman.txt" ] && sudo pacman -S --needed --noconfirm - < packages/pacman.txt
 [ -f "packages/aur.txt" ] && yay -S --needed --noconfirm - < packages/aur.txt
 
 # 9. Deploy configuration files
-# Standard rsync as requested (no excludes)
 [ -d "etc" ] && sudo rsync -a etc/ /etc/
 [ -d "usr" ] && sudo rsync -a usr/ /usr/
-[ -d "home" ] && rsync -a home/ "$HOME/"
-
-# 10. Update system caches
-[ -d "$HOME/.local/share/fonts" ] && fc-cache -fv >/dev/null
-[ -d "$HOME/.local/share/applications" ] && update-desktop-database "$HOME/.local/share/applications"
+[ -d "home" ] && rsync -a home/ "/home/$new_user/" 
 
 # 11. Display manager, firewall, Fish shell
-# Correct dinit service handling for ly
 if pacman -Qs ly >/dev/null; then
-    echo "Configuring ly for dinit..."
     sudo pacman -S --needed --noconfirm ly-dinit || true
     sudo dinitctl enable ly || true
 fi
@@ -99,16 +112,14 @@ if command -v ufw &>/dev/null; then
 fi
 
 if [[ "$fish_choice" =~ ^[Yy]$ ]]; then
-    if ! command -v fish &>/dev/null; then
-        sudo pacman -S --noconfirm fish
-    fi
-    sudo chsh -s /usr/bin/fish "$USER"
+    sudo pacman -S --noconfirm fish
+    sudo chsh -s /usr/bin/fish "$new_user"
 fi
 
 # 12. Cleanup
 cd "$HOME"
 rm -rf "$CLONE_DIR"
-echo "Done."
+echo "Done. Arch extra enabled and user $new_user created."
 
 # Prompt reboot
 read -p "Reboot now? [y/N]: " confirm_reboot
