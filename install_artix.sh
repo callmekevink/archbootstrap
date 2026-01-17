@@ -13,37 +13,58 @@ read -p "Install Discord? [y/N]: " discord_choice
 IS_ARTIX=false
 if [ -f /etc/artix-release ]; then
     IS_ARTIX=true
-    echo "Artix Linux detected. Configuring Arch repositories..."
-    
-    # Fix Artix repository naming mismatch (system/world vs core/extra)
-    # This prevents 404s caused by looking for 'core' on Artix mirrors
-    sudo sed -i 's/\[core\]/\[system\]/g' /etc/pacman.conf
-    sudo sed -i 's/\[extra\]/\[world\]/g' /etc/pacman.conf
-    sudo sed -i 's/\[community\]/\[galaxy\]/g' /etc/pacman.conf
+    echo "Artix Linux detected. Configuring Repositories..."
 
-    # Inject reliable mirrors directly to avoid broken initial mirrorlist
+    # Step A: Clean up pacman.conf to prevent cross-repo 404s
+    # Removes generic includes so we can specify them per-repository
+    sudo sed -i '/^Include = \/etc\/pacman.d\/mirrorlist/d' /etc/pacman.conf
+
+    # Step B: Rewrite the base Artix repo structure
+    sudo bash -c 'cat <<EOF > /etc/pacman.conf
+[options]
+HoldPkg     = pacman libc
+SyncFirst   = artix-keyring
+Architecture = auto
+SigLevel    = Required DatabaseOptional
+LocalFileSigLevel = Optional
+
+[system]
+Include = /etc/pacman.d/mirrorlist
+
+[world]
+Include = /etc/pacman.d/mirrorlist
+
+[galaxy]
+Include = /etc/pacman.d/mirrorlist
+EOF'
+
+    # Step C: Inject reliable Artix mirrors to bootstrap the process
     echo "Server = https://mirror.pasqualle.nl/artix-linux/\$repo/os/\$arch" | sudo tee /etc/pacman.d/mirrorlist
     echo "Server = https://artix.scloud.at/\$repo/os/\$arch" | sudo tee -a /etc/pacman.d/mirrorlist
 
-    # Sync and get Arch support
+    # Step D: Install Arch Support
     sudo pacman -Sy --needed --noconfirm artix-archlinux-support
-    
+
+    # Step E: Add Arch [extra] and [multilib] properly nested under their own mirrors
     if ! grep -q "\[extra\]" /etc/pacman.conf; then
         sudo bash -c 'cat <<EOF >> /etc/pacman.conf
 
 [extra]
 Include = /etc/pacman.d/mirrorlist-arch
+
+[multilib]
+Include = /etc/pacman.d/mirrorlist-arch
 EOF'
     fi
 
-    # Seed Arch mirrors so pacman can find 'extra' and 'reflector'
+    # Step F: Seed Arch mirrors so reflector has a target to fix
     echo "Server = https://geo.mirror.pkgbuild.com/\$repo/os/\$arch" | sudo tee /etc/pacman.d/mirrorlist-arch
     
-    echo "Optimizing mirrors..."
+    echo "Optimizing Arch mirrors..."
     sudo pacman -Sy --needed --noconfirm reflector
     sudo reflector --latest 10 --protocol https --sort rate --save /etc/pacman.d/mirrorlist-arch
     
-    # Final sync and keyring update
+    # Final sync and keyring update for both Artix and Arch
     sudo pacman -Syy --noconfirm archlinux-keyring artix-keyring
 fi
 
