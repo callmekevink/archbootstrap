@@ -15,9 +15,7 @@ read -p "Install Discord? [y/N]: " discord_choice
 
 PACMAN_CONF="/etc/pacman.conf"
 
-# ---------------------------
-# 0.1 Artix Arch support (runit)
-# ---------------------------
+
 echo "Installing Artix Arch support..."
 sudo pacman -S --needed --noconfirm artix-archlinux-support dbus-runit
 sudo pacman-key --populate archlinux
@@ -42,7 +40,7 @@ git clone -b "$branch_choice" --single-branch "$REPO_URL" "$CLONE_DIR"
 cd "$CLONE_DIR"
 
 # ---------------------------
-# 3. Microcode
+# 3. microcoed
 # ---------------------------
 [[ "$ucode_choice" == "amd" ]] && sudo pacman -S --needed --noconfirm amd-ucode
 [[ "$ucode_choice" == "intel" ]] && sudo pacman -S --needed --noconfirm intel-ucode
@@ -65,13 +63,11 @@ if [[ "$discord_choice" =~ ^[Yy]$ ]]; then
     sudo pacman -S --needed --noconfirm --ignore pacman,glibc,lib32-glibc,mesa discord || true
 fi
 
-# ---------------------------
-# 6. Re-generate initramfs
-# ---------------------------
+
 sudo mkinitcpio -P
 
 # ---------------------------
-# 7. yay (AUR helper)
+# 7. yay 
 # ---------------------------
 if ! command -v yay &>/dev/null; then
     tempdir=$(mktemp -d)
@@ -83,41 +79,46 @@ if ! command -v yay &>/dev/null; then
 fi
 
 # ---------------------------
-# 8. Install packages from artix.txt
+# 8. Install packages from artix.txt and pacman.txt
 # ---------------------------
 if [ -f "packages/artix.txt" ]; then
     echo "Installing packages from packages/artix.txt..."
     sudo pacman -S --needed --noconfirm - < packages/artix.txt
 fi
 
-# Optional: AUR packages
+if [ -f "packages/pacman.txt" ]; then
+    echo "Installing packages from packages/pacman.txt..."
+    sudo pacman -S --needed --noconfirm - < packages/pacman.txt
+fi
+
+
 if [ -f "packages/aur.txt" ]; then
     yay -S --needed --noconfirm - < packages/aur.txt
 fi
 
 # ---------------------------
-# 9. Deploy configuration files
+# 9. deply configs etc isr
 # ---------------------------
 [ -d "etc" ] && sudo rsync -a etc/ /etc/
 [ -d "usr" ] && sudo rsync -a usr/ /usr/
 [ -d "home" ] && rsync -a home/ "$HOME/"
 
 # ---------------------------
-# 10. Update caches
+# 10. cache
 # ---------------------------
 [ -d "$HOME/.local/share/fonts" ] && fc-cache -fv >/dev/null
 [ -d "$HOME/.local/share/applications" ] && update-desktop-database "$HOME/.local/share/applications"
 
-# Wallpaper
+# wallpaper
 if command -v awww &>/dev/null; then
     pgrep awww-daemon >/dev/null || awww-daemon &
     sleep 4
-    WP_DIR="$HOME/.local/share/wallpapers"
-    [ -d "$WP_DIR" ] && [ "$(ls -A "$WP_DIR")" ] && awww img "$WP_DIR/"* &
+    WP_FILE="$HOME/.local/share/wallpapers/Hades.png"
+    [ -f "$WP_FILE" ] && awww img "$WP_FILE" &
 fi
 
 # ---------------------------
-# 11. Helper function: enable runit services
+# 11. runit function
 # ---------------------------
 enable_runit_service() {
     local service_name=$1
@@ -130,7 +131,7 @@ enable_runit_service() {
 }
 
 # ---------------------------
-# 12. Enable essential runit services
+# 12. runit enable
 # ---------------------------
 ESSENTIAL_SERVICES=(
     dbus-runit
@@ -145,19 +146,13 @@ for svc in "${ESSENTIAL_SERVICES[@]}"; do
     enable_runit_service "$svc"
 done
 
-# Disable agetty on tty1 to prevent conflicts with ly
-if [ -d "/etc/runit/sv/agetty-tty1" ]; then
-    echo "Disabling agetty on tty1..."
-    sudo sv stop agetty-tty1 || true
-    sudo rm -f /run/runit/service/agetty-tty1 || true
-fi
-
 # ---------------------------
 # 13. Fish shell
 # ---------------------------
 if [[ "$fish_choice" =~ ^[Yy]$ ]]; then
     sudo pacman -S --noconfirm fish
-    sudo chsh -s /usr/bin/fish "$USER"
+    # Change shell for the actual user, not root
+    sudo chsh -s /usr/bin/fish "${SUDO_USER:-$USER}"
 fi
 
 # ---------------------------
