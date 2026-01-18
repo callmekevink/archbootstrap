@@ -58,12 +58,15 @@ fi
 [ -d "$HOME/.local/share/fonts" ] && fc-cache -fv >/dev/null
 [ -d "$HOME/.local/share/applications" ] && update-desktop-database "$HOME/.local/share/applications"
 
-if command -v awww &>/dev/null; then #set wallpaper
+#wallaper
+if command -v awww &>/dev/null; then
     pgrep awww-daemon >/dev/null || awww-daemon &
     sleep 4
-    WP_DIR="$HOME/.local/share/wallpapers"
-    if [ -d "$WP_DIR" ] && [ "$(ls -A "$WP_DIR")" ]; then
-        awww img "$WP_DIR/"* &
+    WP_FILE="$HOME/.local/share/wallpapers/Hades.png"
+    if [ -f "$WP_FILE" ]; then
+        awww img "$WP_FILE" &
+    else
+        echo "Wallpaper file not found: $WP_FILE"
     fi
 fi
 
