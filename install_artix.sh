@@ -134,12 +134,12 @@ enable_runit_service() {
 # 12. runit enable
 # ---------------------------
 ESSENTIAL_SERVICES=(
-    dbus-runit
-    elogind-runit
-    networkmanager-runit
-    ly-runit
-    ufw-runit
-    bluez-runit
+    dbus
+    elogind
+    networkmanager
+    ly
+    ufw
+    bluez
 )
 
 for svc in "${ESSENTIAL_SERVICES[@]}"; do
