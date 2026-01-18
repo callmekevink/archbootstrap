@@ -1,8 +1,0 @@
-dbus-dinit
-elogind-dinit
-networkmanager-dinit
-ly-dinit
-pipewire-dinit
-wireplumber-dinit
-ufw-dinit
-bluez-dinit
