@@ -8,6 +8,7 @@ read -p "AMD or Intel Ucode? [amd/intel]: " ucode_choice
 read -p "Install Vulkan? [intel/amd/no]: " vulkan_choice
 read -p "Use Fish shell? [y/N]: " fish_choice
 read -p "Install Discord? [y/N]: " discord_choice
+read -p "PNG or GIF wallaper? [png/gif/none]: " wallpaper_choice
 
 # 1. Install core tools
 sudo pacman -Syu --needed --noconfirm base-devel git rsync
@@ -60,13 +61,32 @@ fi
 
 #wallaper
 if command -v awww &>/dev/null; then
-    pgrep awww-daemon >/dev/null || awww-daemon &
-    sleep 4
-    WP_FILE="$HOME/.local/share/wallpapers/Hades.png"
-    if [ -f "$WP_FILE" ]; then
-        awww img "$WP_FILE" &
-    else
-        echo "Wallpaper file not found: $WP_FILE"
+    case "$wallpaper_choice" in
+        png)
+            WP_FILE="$HOME/.local/share/wallpapers/Hades.png"
+            ;;
+        gif)
+            WP_FILE="$HOME/.local/share/wallpapers/8bitCitygif"
+            ;;
+        none|"")
+            echo "Skipping wallpaper setup."
+            WP_FILE=""
+            ;;
+        *)
+            echo "Invalid wallpaper choice: $wallpaper_choice"
+            WP_FILE=""
+            ;;
+    esac
+
+    if [[ -n "$WP_FILE" ]]; then
+        pgrep awww-daemon >/dev/null || awww-daemon &
+        sleep 4
+
+        if [[ -f "$WP_FILE" ]]; then
+            awww img "$WP_FILE" &
+        else
+            echo "Wallpaper file not found: $WP_FILE"
+        fi
     fi
 fi
 
