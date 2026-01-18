@@ -20,7 +20,7 @@ gutenprint
 htop
 impala
 iwd
-kitty
+alacritty
 linux
 linux-firmware
 lxsession
