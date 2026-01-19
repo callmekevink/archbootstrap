@@ -66,7 +66,7 @@ if command -v awww &>/dev/null; then
             WP_FILE="$HOME/.local/share/wallpapers/Hades.png"
             ;;
         gif)
-            WP_FILE="$HOME/.local/share/wallpapers/8bitCitygif"
+            WP_FILE="$HOME/.local/share/wallpapers/8bitCity.gif"
             ;;
         none|"")
             echo "Skipping wallpaper setup."
