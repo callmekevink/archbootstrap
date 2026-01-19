@@ -106,6 +106,8 @@ if command -v ufw &>/dev/null; then
     echo "y" | sudo ufw enable || true
 fi
 
+gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+
 if [[ "$fish_choice" =~ ^[Yy]$ ]]; then
     if ! command -v fish &>/dev/null; then
         sudo pacman -S --noconfirm fish
