@@ -8,7 +8,6 @@ read -p "AMD or Intel Ucode? [amd/intel]: " ucode_choice
 read -p "Install Vulkan? [intel/amd/no]: " vulkan_choice
 read -p "Use Fish shell? [y/N]: " fish_choice
 read -p "Install Discord? [y/N]: " discord_choice
-read -p "PNG or GIF wallaper? [png/gif/none]: " wallpaper_choice
 
 # 1. Install core tools
 sudo pacman -Syu --needed --noconfirm base-devel git rsync
@@ -59,55 +58,16 @@ fi
 [ -d "$HOME/.local/share/fonts" ] && fc-cache -fv >/dev/null
 [ -d "$HOME/.local/share/applications" ] && update-desktop-database "$HOME/.local/share/applications"
 
-#wallaper
-if command -v awww &>/dev/null; then
-    case "$wallpaper_choice" in
-        png)
-            WP_FILE="$HOME/.local/share/wallpapers/Hades.png"
-            ;;
-        gif)
-            WP_FILE="$HOME/.local/share/wallpapers/8bitCity.gif"
-            ;;
-        none|"")
-            echo "Skipping wallpaper setup."
-            WP_FILE=""
-            ;;
-        *)
-            echo "Invalid wallpaper choice: $wallpaper_choice"
-            WP_FILE=""
-            ;;
-    esac
-
-    if [[ -n "$WP_FILE" ]]; then
-        pgrep awww-daemon >/dev/null || awww-daemon &
-        sleep 4
-
-        if [[ -f "$WP_FILE" ]]; then
-            awww img "$WP_FILE" &
-        else
-            echo "Wallpaper file not found: $WP_FILE"
-        fi
-    fi
-fi
-
 # 8. displayermanager, firewall, fish
 if pacman -Qs ly >/dev/null; then
     sudo systemctl enable ly@tty2.service
     sudo systemctl disable getty@tty2.service || true
 fi
 
-if command -v ufw &>/dev/null; then
-    sudo systemctl enable --now ufw
-    sudo ufw default deny incoming
-    sudo ufw default allow outgoing
-    sudo ufw allow ssh
-    sudo ufw allow http
-    sudo ufw allow https
-    echo "y" | sudo ufw enable || true
-fi
-
+# dark pref
 gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
+#fish
 if [[ "$fish_choice" =~ ^[Yy]$ ]]; then
     if ! command -v fish &>/dev/null; then
         sudo pacman -S --noconfirm fish
@@ -116,7 +76,6 @@ if [[ "$fish_choice" =~ ^[Yy]$ ]]; then
 fi
 
 # 9. cleanup 
-
 cd "$HOME"
 rm -rf "$CLONE_DIR"
 echo "Done."
