@@ -68,6 +68,8 @@ layout {
 spawn-sh-at-startup "lxsession"
 spawn-sh-at-startup "awww-daemon"
 spawn-sh-at-startup "waybar"
+spawn-sh-at-startup "$HOME/.local/share/script/random-wallpaper.sh"
+
 hotkey-overlay {
     skip-at-startup
 }
@@ -167,8 +169,8 @@ window-rule {
 }
 
 binds {
-    Alt+Space hotkey-overlay-title="rofi drun" { spawn-sh "pkill rofi || rofi -show drun"; }
-    Mod+space hotkey-overlay-title="rofi window" { spawn-sh "pkill rofi || rofi -show window"; }
+    Alt+Space hotkey-overlay-title="rofi drun" { spawn-sh "pkill rofi || rofi -show drun --show-icons"; }
+    Mod+space hotkey-overlay-title="rofi window" { spawn-sh "pkill rofi || rofi -show window --show-icons"; }
     Mod+T hotkey-overlay-title="alacritty terminal" { spawn "alacritty"; }
 
     Num_Lock hotkey-overlay-title="Mute Microphone" { spawn-sh "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle"; }
@@ -299,6 +301,8 @@ binds {
 
     Mod+W { toggle-column-tabbed-display; }
 
+		Ctrl+Alt+Delete hotkey-overlay-title="Power menu" { spawn-sh "pkill rofi || exec rofi -show powermenu -modi powermenu:/usr/bin/rofi-power-menu --show-icons"; }
+	Mod+Shift+E hotkey-overlay-title="Power menu" { spawn-sh "pkill rofi || exec rofi -show powermenu -modi powermenu:/usr/bin/rofi-power-menu --show-icons"; }
     Print { screenshot; }
     Ctrl+Print { screenshot-screen; }
     Alt+Print { screenshot-window; }
