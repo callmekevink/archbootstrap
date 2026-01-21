@@ -301,9 +301,10 @@ binds {
 
     Mod+W { toggle-column-tabbed-display; }
 
-		Ctrl+Alt+Delete hotkey-overlay-title="Power menu" { spawn-sh "pkill rofi || exec rofi -show powermenu -modi powermenu:/usr/bin/rofi-power-menu --show-icons"; }
+	Ctrl+Alt+Delete hotkey-overlay-title="Power menu" { spawn-sh "pkill rofi || exec rofi -show powermenu -modi powermenu:/usr/bin/rofi-power-menu --show-icons"; }
 	Mod+Shift+E hotkey-overlay-title="Power menu" { spawn-sh "pkill rofi || exec rofi -show powermenu -modi powermenu:/usr/bin/rofi-power-menu --show-icons"; }
-    Print { screenshot; }
+    
+	Print { screenshot; }
     Ctrl+Print { screenshot-screen; }
     Alt+Print { screenshot-window; }
 
