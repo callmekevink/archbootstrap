@@ -317,6 +317,4 @@ binds {
     // The allow-inhibiting=false property can be applied to other binds as well,
     // which ensures niri always processes them, even when an inhibitor is active.
     Mod+Escape allow-inhibiting=false { toggle-keyboard-shortcuts-inhibit; }
-
-	Ctrl+Alt+Delete hotkey-overlay-title="Power menu" { spawn-sh "pkill rofi || exec rofi -show powermenu -modi powermenu:/usr/bin/rofi-power-menu"; }
-	Mod+Shift+E hotkey-overlay-title="Power menu" { spawn-sh "pkill rofi || exec rofi -show powermenu -modi powermenu:/usr/bin/rofi-power-menu"; }
+}
