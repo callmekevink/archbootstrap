@@ -24,30 +24,32 @@ cd "$CLONE_DIR"
 [[ "$ucode_choice" == "intel" ]] && sudo pacman -S --needed --noconfirm intel-ucode
 
 case "$vulkan_choice" in
-    intel) sudo pacman -S --needed --noconfirm vulkan-intel vulkan-icd-loader ;;
-    amd) sudo pacman -R --noconfirm amdvlk || true
-         sudo pacman -S --needed --noconfirm vulkan-radeon vulkan-icd-loader ;;
+intel) sudo pacman -S --needed --noconfirm vulkan-intel vulkan-icd-loader ;;
+amd)
+  sudo pacman -R --noconfirm amdvlk || true
+  sudo pacman -S --needed --noconfirm vulkan-radeon vulkan-icd-loader
+  ;;
 esac
 
 if [[ "$discord_choice" =~ ^[Yy]$ ]]; then
-    sudo pacman -S --needed --noconfirm discord
+  sudo pacman -S --needed --noconfirm discord
 fi
 
 sudo mkinitcpio -P
 
 # 4. yay
 if ! command -v yay &>/dev/null; then
-    tempdir=$(mktemp -d)
-    git clone https://aur.archlinux.org/yay.git "$tempdir/yay"
-    pushd "$tempdir/yay" >/dev/null
-    makepkg -si --noconfirm
-    popd >/dev/null
-    rm -rf "$tempdir"
+  tempdir=$(mktemp -d)
+  git clone https://aur.archlinux.org/yay.git "$tempdir/yay"
+  pushd "$tempdir/yay" >/dev/null
+  makepkg -si --noconfirm
+  popd >/dev/null
+  rm -rf "$tempdir"
 fi
 
 # 5. packages install
-[ -f "packages/pacman.txt" ] && sudo pacman -S --needed --noconfirm - < packages/pacman.txt
-[ -f "packages/aur.txt" ] && yay -S --needed --noconfirm - < packages/aur.txt
+[ -f "packages/pacman.txt" ] && sudo pacman -S --needed --noconfirm - <packages/pacman.txt
+[ -f "packages/aur.txt" ] && yay -S --needed --noconfirm - <packages/aur.txt
 
 # 6. deploy files
 [ -d "etc" ] && sudo rsync -a etc/ /etc/
@@ -60,8 +62,9 @@ fi
 
 # 8. displayermanager, firewall, fish
 if pacman -Qs ly >/dev/null; then
-    sudo systemctl enable ly@tty2.service
-    sudo systemctl disable getty@tty2.service || true
+  sudo systemctl enable ly@tty2.service
+  sudo systemctl disable getty@tty2.service || true
+  sudo systemctl enable bluetooth
 fi
 
 # dark pref
@@ -69,20 +72,20 @@ gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
 
 #fish
 if [[ "$fish_choice" =~ ^[Yy]$ ]]; then
-    if ! command -v fish &>/dev/null; then
-        sudo pacman -S --noconfirm fish
-    fi
-    sudo chsh -s /usr/bin/fish "$USER"
+  if ! command -v fish &>/dev/null; then
+    sudo pacman -S --noconfirm fish
+  fi
+  sudo chsh -s /usr/bin/fish "$USER"
 fi
 
-# 9. cleanup 
+# 9. cleanup
 cd "$HOME"
 rm -rf "$CLONE_DIR"
 echo "Done."
 
 read -p "Reboot now? [y/N]: " confirm_reboot
 if [[ "$confirm_reboot" =~ ^[Yy]$ ]]; then
-    sudo reboot
+  sudo reboot
 else
-    echo "Reboot recommended."
+  echo "Reboot recommended."
 fi

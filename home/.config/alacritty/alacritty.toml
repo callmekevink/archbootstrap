@@ -1,2 +1,4 @@
 [general]
-import = ["~/.config/alacritty/themes/themes/tokyo_night_storm.toml"]
+import = [
+    "~/.config/alacritty/themes/themes/tokyo_night_storm.toml"
+]
