@@ -68,7 +68,7 @@ if pacman -Qs ly >/dev/null; then
 fi
 
 # dark pref
-gsettings set org.gnome.desktop.interface color-scheme 'prefer-dark'
+gsettings set org.gnome.desktop.interface gtk-theme 'Tokyonight-B-MB-Dark-Storm'
 
 #fish
 if [[ "$fish_choice" =~ ^[Yy]$ ]]; then
