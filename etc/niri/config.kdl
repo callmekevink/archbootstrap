@@ -143,6 +143,7 @@ window-rule{
 
 cursor{
   xcursor-theme "volantes_light_cursors"
+	hide-after-inactive-ms 1000
 }
 
 
@@ -164,10 +165,8 @@ window-rule {
 	opacity 0.75
 	exclude is-focused=true
 }
+  
 
-cursor {
-	hide-after-inactive-ms 1000
-}
 
 window-rule{
 	match title="File Operation"
