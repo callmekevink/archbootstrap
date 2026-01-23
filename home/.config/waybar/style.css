@@ -32,12 +32,12 @@ window#waybar {
 }
 
 #workspaces button.focused {
-    color: #c9545d;
-    border-top: 2px solid #c9545d;
+    color: #ff7a93;
+    border-top: 2px solid #ff7a93;
 }
 
 #mode {
-    background: #64727d;
+    background: #db4b4b;
     border-bottom: 3px solid white;
 }
 
@@ -54,9 +54,6 @@ window#waybar {
     margin: 0 2px;
 }
 
-#clock {
-    font-weight: bold;
-}
 
 #battery {
 }
@@ -103,9 +100,6 @@ window#waybar {
 #pulseaudio.muted {
 }
 
-#custom-spotify {
-    color: rgb(102, 220, 105);
-}
 
 #tray {
 }
