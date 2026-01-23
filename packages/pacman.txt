@@ -39,6 +39,7 @@ pipewire-alsa
 pipewire-jack
 pipewire-pulse
 rofi
+gparted
 timeshift
 ttf-bitstream-vera
 ttf-dejavu
