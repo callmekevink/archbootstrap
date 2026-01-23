@@ -68,7 +68,8 @@ layout {
 spawn-sh-at-startup "lxsession"
 spawn-sh-at-startup "awww-daemon"
 spawn-sh-at-startup "waybar"
-spawn-sh-at-startup "$HOME/.local/share/script/random-wallpaper.sh"
+spawn-at-startup "/usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
+spawn-at-startup "$HOME/.local/share/script/select-wallpaper.sh"
 
 hotkey-overlay {
     skip-at-startup
@@ -92,12 +93,30 @@ animations {
 		duration-ms 100
 	}
 }
+window-rule{
+  match is-window-cast-target=true
 
+  focus-ring {
+    active-color "#FF0000"
+    inactive-color "#FF5555"
+  }
+
+  border {
+    inactive-color "#FF5555"
+  }
+
+  shadow {
+    color "#FF000070"
+  }
+
+  tab-indicator {
+    active-color "#FF0000"
+    inactive-color "#FF5555"
+  }
+
+}
 window-rule{
 	opacity 0.95
-	focus-ring {
-		off
-	}
     	geometry-corner-radius 0
     	clip-to-geometry true
 }
@@ -120,6 +139,10 @@ window-rule{
 		active-color "#127f5d"
 		inactive-color "505050"
 	}
+}
+
+cursor{
+  xcursor-theme "volantes_light_cursors"
 }
 
 
