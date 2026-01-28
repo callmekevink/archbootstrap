@@ -31,10 +31,6 @@ amd)
   ;;
 esac
 
-if [[ "$discord_choice" =~ ^[Yy]$ ]]; then
-  sudo pacman -S --needed --noconfirm discord
-fi
-
 sudo mkinitcpio -P
 
 # 4. yay
@@ -50,6 +46,11 @@ fi
 # 5. packages install
 [ -f "packages/pacman.txt" ] && sudo pacman -S --needed --noconfirm - <packages/pacman.txt
 [ -f "packages/aur.txt" ] && yay -S --needed --noconfirm - <packages/aur.txt
+
+if [[ "$discord_choice" =~ ^[Yy]$ ]]; then
+  yay -S vesktop --answerdiff None --answerclean None --mflags "--noconfirm"
+
+fi
 
 # 6. deploy files
 [ -d "etc" ] && sudo rsync -a etc/ /etc/

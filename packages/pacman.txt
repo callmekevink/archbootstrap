@@ -56,3 +56,4 @@ xdg-utils
 xorg-server
 xwayland-satellite
 zram-generator
+mako
