@@ -68,7 +68,7 @@ layout {
 spawn-sh-at-startup "lxsession"
 spawn-sh-at-startup "awww-daemon"
 spawn-sh-at-startup "waybar"
-spawn-at-startup "$HOME/.local/share/script/select-wallpaper.sh"
+spawn-at-startup "mako"
 
 hotkey-overlay {
     skip-at-startup
