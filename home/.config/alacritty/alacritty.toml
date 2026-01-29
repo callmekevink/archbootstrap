@@ -1,4 +1,6 @@
 [general]
-import = [
-    "~/.config/alacritty/themes/themes/tokyo_night_storm.toml"
-]
+import = ["~/.config/alacritty/themes/themes/tokyo_night_storm.toml"]
+
+[font]
+size = 12
+normal = { family = "Terminess Nerd Font", style = "Regular" }

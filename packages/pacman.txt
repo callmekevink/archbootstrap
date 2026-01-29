@@ -57,3 +57,4 @@ xorg-server
 xwayland-satellite
 zram-generator
 mako
+ttf-terminus-nerd
