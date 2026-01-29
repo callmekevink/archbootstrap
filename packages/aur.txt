@@ -1,5 +1,5 @@
-awww-git
-awww-git-debug
+awww-bin
+awww-bin
 floorp-bin
 rofi-power-menu
 swaylock-effects-git
