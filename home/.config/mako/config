@@ -45,4 +45,4 @@ text-color=#c0caf5
 border-color=#f7768e
 background-color=#24283b
 text-color=#f7768e
-default-timeout=0
+default-timeout=10
