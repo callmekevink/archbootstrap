@@ -1,0 +1,4 @@
+spawn-at-startup "waybar"
+spawn-sh-at-startup "exec /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
+spawn-at-startup "dunst"
+spawn-at-startup "swww-daemon"

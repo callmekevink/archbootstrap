@@ -1,0 +1,52 @@
+animations {
+    window-close {
+        duration-ms 150
+        curve "ease-out-quad"
+        }
+    window-movement {
+        spring damping-ratio=1.0 stiffness=800 epsilon=0.0001
+        }
+  }
+    
+window-rule {
+    match app-id=r#"firefox$"# title="^Picture-in-Picture$"
+    open-floating true
+}
+
+window-rule {
+    match app-id="floorp"
+    open-maximized true
+    open-on-output "HDMI-A-1"
+      }
+
+window-rule {
+	match is-focused=false
+	opacity 0.85
+  exclude app-id="floorp"
+}
+
+window-rule {
+    geometry-corner-radius 20 0 20 0 
+    clip-to-geometry true
+}
+window-rule {
+    match app-id="Alacritty"
+    geometry-corner-radius 10 0 20 0 
+    clip-to-geometry true
+}
+
+window-rule {
+  match is-floating=true
+  geometry-corner-radius 4
+}
+
+window-rule {
+match app-id=r#"^org\.keepassxc\.KeePassXC$"#
+match app-id=r#"^org\.gnome\.World\.Secrets$"#
+match app-id="floorp" title="Private"
+match app-id="thunar"
+match app-id="vesktop"
+
+block-out-from "screen-capture"
+}
+
