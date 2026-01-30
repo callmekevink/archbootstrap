@@ -40,7 +40,11 @@ icons[cancel]="\Uf0156"
 declare -A actions
 actions[lockscreen]="swaylock --fade-in 0.3 --screenshot --clock --datestr %d.%m.%Y --indicator --effect-blur 10x10}"
 #actions[switchuser]="???"
+<<<<<<< HEAD
 actions[logout]="niri msg action quit --skip-confirmation"
+=======
+actions[logout]="niri msg action qui --skip-confirmation"
+>>>>>>> 76057c0f62ea296798e6a3a65617e6e0c8035933
 actions[suspend]="systemctl suspend"
 actions[hibernate]="systemctl hibernate"
 actions[reboot]="systemctl reboot"
