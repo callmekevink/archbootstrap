@@ -40,7 +40,7 @@ icons[cancel]="\Uf0156"
 declare -A actions
 actions[lockscreen]="swaylock --fade-in 0.3 --screenshot --clock --datestr %d.%m.%Y --indicator --effect-blur 10x10}"
 #actions[switchuser]="???"
-actions[logout]="loginctl terminate-session ${XDG_SESSION_ID-}"
+actions[logout]="niri msg action qui --skip-confirmation"
 actions[suspend]="systemctl suspend"
 actions[hibernate]="systemctl hibernate"
 actions[reboot]="systemctl reboot"
