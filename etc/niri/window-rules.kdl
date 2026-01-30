@@ -23,6 +23,10 @@ window-rule {
 	match is-focused=false
 	opacity 0.85
   exclude app-id="floorp"
+	focus-ring {
+		off
+	}
+
 }
 
 window-rule {
