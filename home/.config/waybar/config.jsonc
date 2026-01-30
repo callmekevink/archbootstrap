@@ -5,11 +5,10 @@
   // "width": 1366, // Waybar width
   // Choose the order of the modules
   "modules-left": ["niri/workspaces", "niri/mode"],
-  "modules-center": ["niri/window"],
+  "modules-center": ["network"],
   "modules-right": [
-    "pulseaudio",
-    "network",
     "bluetooth",
+    "pulseaudio",    
     "cpu",
     "memory",
     "battery",

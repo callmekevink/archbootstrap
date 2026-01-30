@@ -29,9 +29,6 @@ window#waybar {
     border-top: 2px solid transparent;
 }
 
-#workspaces button.focused {
-    color: #7aa2f7;    border-top: 2px solid #7aa2f7;
-}
 
 #workspaces button.urgent {
     color: #f7768e;    border-top: 2px solid #f7768e;
