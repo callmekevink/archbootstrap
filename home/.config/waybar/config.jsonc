@@ -4,16 +4,15 @@
   "height": 24, // Waybar height
   // "width": 1366, // Waybar width
   // Choose the order of the modules
-  "modules-left": ["niri/workspaces", "niri/mode"],
-  "modules-center": ["network"],
+  "modules-left": ["niri/workspaces", "pulseaudio", "pulseaudio#microphone"],
+  "modules-center": ["clock"],
   "modules-right": [
-    "bluetooth",
-    "pulseaudio",    
+    "network",
+   // "bluetooth",
     "cpu",
     "memory",
     "battery",
     "tray",
-    "clock",
   ],
   "niri/workspaces": {
     "disable-scroll": true,
@@ -31,15 +30,13 @@
       "default": "",
     },
   },
-  "niri/mode": {
-    "format": "<span style=\"italic\">{}</span>",
-  },
   "tray": {
     // "icon-size": 21,
     "spacing": 10,
   },
   "clock": {
   "format": "{:%d.%m.%Y - %H:%M}",
+  "on-click": "alacritty -e calcure"
   },
   "cpu": {
     "format": "{usage}% ",
@@ -64,8 +61,8 @@
     "format-ethernet": "{bandwidthDownBits} - {bandwidthUpBits}",
     "interval": 1,
     "format-disconnected": "Disconnected ⚠",
-    "on-click": "alacritty -e impala",
-    "tooltip": false
+    "tooltip": true,
+    "on-click": "nm-connection-editor"
   },
 
   "bluetooth": {
@@ -74,13 +71,12 @@
       "tooltip-format": "{status}",
     "format-connected": "",
     "format-disabled": "",
-    "on-click": "alacritty -e bluetui"
   },
 
   "pulseaudio": {
-    //"scroll-step": 1,
-    "format": "{volume}% {icon} {format_source}",
-    "format-muted": "",
+    "scroll-step": 1,
+    "format": "{volume}% {icon}",
+    "format-muted": "", 
     "format-icons": {
       "headphones": "",
       "phone": "",
@@ -89,7 +85,16 @@
       "default": ["",""],
     },
     "on-click": "pavucontrol",
-    "format-source": "",
-    "format-source-muted": ""
+    
   },
+
+  "pulseaudio#microphone": {
+    "format": "{format_source}",
+    "format-source": "󰍰",
+    "format-source-muted": "󰍱",
+    "on-click": "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle",
+    "tooltip": true
+
+
+  }
 }

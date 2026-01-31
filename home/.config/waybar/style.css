@@ -23,7 +23,7 @@ window#waybar {
 
 
 #workspaces button {
-    padding: 0 6px;
+    padding: 0px 4px; 
     background: transparent;
     color: #9aa5ce;
     border-top: 2px solid transparent;
@@ -35,25 +35,19 @@ window#waybar {
 }
 
 
-#mode {
-    background: #f7768e;
-    color: #1f2335;
-    border-bottom: 3px solid #c0caf5;
-}
 
 
+#pulseaudio,
 #clock,
 #battery,
 #cpu,
 #memory,
 #network,
-#pulseaudio,
-#custom-spotify,
 #tray,
 #mode,
 #bluetooth {
     padding: 1px 6px;
-    margin: 0 2px;
+    margin: 2px 2px;
 }
 
 
@@ -106,19 +100,16 @@ window#waybar {
 
 
 #pulseaudio {
-    color: #9ece6a;
+    color: #9ece6a;   
 }
 
 #pulseaudio.muted {
     color: #565f89;
 }
 
-
 #bluetooth {
     color: #7dcfff;
-    margin-left: 4px;
-    margin-right: 1px;
-}
+   }
 
 #tray {
     color: #c0caf5;
