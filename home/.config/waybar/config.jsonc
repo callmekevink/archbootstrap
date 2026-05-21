@@ -4,13 +4,14 @@
   "height": 24, // Waybar height
   // "width": 1366, // Waybar width
   // Choose the order of the modules
-  "modules-left": ["niri/workspaces", "pulseaudio", "pulseaudio#microphone"],
+  "modules-left": ["niri/workspaces", "pulseaudio", "pulseaudio#microphone", "mpris"],
   "modules-center": ["clock"],
   "modules-right": [
     "network",
    // "bluetooth",
     "cpu",
     "memory",
+    "niri/language",
     "battery",
     "tray",
   ],
@@ -95,6 +96,29 @@
     "on-click": "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle",
     "tooltip": true
 
+
+  },
+
+  "niri/language": {
+    "format": "󰧺 {}",
+    "format-en": "US",
+    "format-de": "DE"
+  },
+
+  "mpris": {
+    "format": "   {player_icon} {status_icon} <i>{artist} - {title}</i>",
+    "player": "playerctld",
+    "max-length": 50,
+    "on-click": "playerctl play-pause",
+    "format-paused": "   {player_icon} {status_icon} {artist} - {title}",
+    "player-icons": {
+      "default": " ",
+    },
+    "status-icons": {
+      "paused": "⏸",
+      "playing": "▶"
+    }
+  }
 
   }
 }
