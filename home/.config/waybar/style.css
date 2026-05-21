@@ -2,7 +2,7 @@
     border: none;
     border-radius: 0;
     font-family: "Terminess Nerd Font";
-    font-size: 15px;
+    font-size: 16px;
     min-height: 0;
     opacity: 0.9;
 }
@@ -21,7 +21,8 @@ window#waybar {
     color: #9aa5ce;
 }
 
-#pulseaudio,
+
+
 #clock,
 #battery,
 #cpu,
@@ -29,8 +30,8 @@ window#waybar {
 #network,
 #tray,
 #mode,
-#bluetooth,
-#mpris {
+#bluetooth
+ {
     padding: 1px 6px;
     margin: 2px 2px;
 }
@@ -50,11 +51,6 @@ window#waybar {
 
 #clock {
     color: #7dcfff; /* cyan */
-}
-
-#mpris {
-    color: #7dcfff;
-    margin: 2px 2px;
 }
 
 #battery {
@@ -99,6 +95,10 @@ window#waybar {
     color: #1f2335;
 }
 
+#mpris {
+    color: #7dcfff;
+    
+}
 
 #pulseaudio {
     color: #9ece6a;   
@@ -121,8 +121,15 @@ window#waybar {
   margin: 2px 2px;
   padding: 1px 6px;
 }
+#workspaces {
+  margin: 10px 0 0 10px;
+  padding: 0 7 0 7px;
+  background-color: #24283b;;
+  border-radius: 10;
+  border: 1px solid #7aa2f7;
 
-.modules-left {
+}
+#audio {
   margin: 10px 0 0 10px;
   padding: 0 0 0 7px;
   background-color: #24283b;;
@@ -145,3 +152,4 @@ window#waybar {
   border-radius: 10;
   border: 1px solid #7aa2f7;
 }
+
