@@ -4,7 +4,7 @@
   "height": 24, // Waybar height
   // "width": 1366, // Waybar width
   // Choose the order of the modules
-  "modules-left": ["niri/workspaces", "pulseaudio", "pulseaudio#microphone", "mpris"],
+  "modules-left": ["niri/workspaces", "group/audio"],
   "modules-center": ["clock"],
   "modules-right": [
     "network",
@@ -15,6 +15,7 @@
     "battery",
     "tray",
   ],
+
   "niri/workspaces": {
     "disable-scroll": true,
     "all-outputs": false,
@@ -30,21 +31,27 @@
       "focused": "",
       "default": "",
     },
+
   },
+
   "tray": {
     // "icon-size": 21,
     "spacing": 10,
   },
+
   "clock": {
   "format": "{:%d.%m.%Y - %H:%M}",
   "on-click": "alacritty -e calcure"
   },
+
   "cpu": {
     "format": "{usage}% ",
   },
+
   "memory": {
     "format": "{}% ",
   },
+
   "battery": {
     "states": {
       // "good": 95,
@@ -83,7 +90,7 @@
       "phone": "",
       "portable": "",
       "car": "",
-      "default": ["",""],
+      "default": ["","  "],
     },
     "on-click": "pavucontrol",
     
@@ -95,8 +102,6 @@
     "format-source-muted": "󰍱",
     "on-click": "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle",
     "tooltip": true
-
-
   },
 
   "niri/language": {
@@ -118,7 +123,15 @@
       "paused": "⏸",
       "playing": "▶"
     }
-  }
+  },
 
-  }
+  "group/audio": {
+  "orientation": "inherit",
+  "modules": [
+    "pulseaudio",
+    "pulseaudio#microphone",
+    "mpris"
+  ]
+}
+
 }
