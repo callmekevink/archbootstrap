@@ -40,7 +40,7 @@
   },
   "clock": {
     "format": "{:%d.%m.%y - %H:%M}",
-    "on-click": "gnome-calendar"
+    "on-click": "alacritty -e calcure"
   },
   "cpu": {
     "format": "{usage}% "
