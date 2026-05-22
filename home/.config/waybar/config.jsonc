@@ -66,10 +66,13 @@
     ]
   },
   "network": {
-    "format-wifi": "{essid} ({signalStrength}%) ",
-    "format-ethernet": "{ifname}: {ipaddr}/{cidr} ",
+    //"interface": "wlan0", // (Optional) To force the use of this interface
+    "format-wifi": "{bandwidthDownBits} - {bandwidthUpBits} ",
+    "format-ethernet": "{bandwidthDownBits} - {bandwidthUpBits}",
+    "interval": 1,
     "format-disconnected": "Disconnected ⚠",
-    "on-click": "alacritty -e impala"
+    "tooltip": true,
+    "on-click": "nm-connection-editor"
   },
   "bluetooth": {
     "format": "",
