@@ -114,7 +114,10 @@
     "status-icons": {
       "paused": "⏸",
       "playing": "▶"
-    }
+    },
+    "ignored-players": [
+      "firefox"
+    ]
   },
   "group/netblue": {
     "orientation": "inherit",
