@@ -1,21 +1,20 @@
 {
-  "layer": "top", // Waybar at top layer
-  "position": "top", // Waybar at the bottom of your screen
-  "height": 24, // Waybar height
-  // "width": 1366, // Waybar width
-  // Choose the order of the modules
-  "modules-left": ["niri/workspaces", "group/audio"],
-  "modules-center": ["clock"],
-  "modules-right": [
-    "network",
-   // "bluetooth",
-    "cpu",
-    "memory",
-    "niri/language",
-    "battery",
-    "tray",
+  "layer": "top", // waybar at top layer
+  "position": "top",
+  "height": 24,
+  "modules-left": [
+    "niri/workspaces",
+    "pulseaudio",
+    "mpris"
   ],
-
+  "modules-center": [
+    "clock"
+  ],
+  "modules-right": [
+    "group/netblue",
+    "group/cpuram",
+    "group/langbatray"
+  ],
   "niri/workspaces": {
     "disable-scroll": true,
     "all-outputs": false,
@@ -28,110 +27,115 @@
       "5:music": "",
       "6:docs": "",
       "urgent": "",
-      "focused": "",
-      "default": "",
-    },
-
+      "focused": " ",
+      "default": " "
+    }
   },
-
+  "niri/mode": {
+    "format": "<span style=\"italic\">{}</span>"
+  },
   "tray": {
     // "icon-size": 21,
-    "spacing": 10,
+    "spacing": 10
   },
-
   "clock": {
-  "format": "{:%d.%m.%Y - %H:%M}",
-  "on-click": "alacritty -e calcure"
+    "format": "{:%d.%m.%y - %H:%M}",
+    "on-click": "gnome-calendar"
   },
-
   "cpu": {
-    "format": "{usage}% ",
+    "format": "{usage}% "
   },
-
   "memory": {
-    "format": "{}% ",
+    "format": "{}% "
   },
-
   "battery": {
     "states": {
       // "good": 95,
       "warning": 30,
-      "critical": 15,
+      "critical": 15
     },
     "format": "{capacity}% {icon}",
-    "format-good": "{capacity}% {icon}", // An empty format will hide the module
+    "format-good": "{capacity}% {icon}", // empty format will hide the module
     "format-full": "{capacity}% {icon}",
-    "format-icons": ["", "", "", "", ""],
+    "format-icons": [
+      "",
+      "",
+      "",
+      "",
+      ""
+    ]
   },
   "network": {
-    //"interface": "wlan0", // (Optional) To force the use of this interface
-    "format-wifi": "{bandwidthDownBits} - {bandwidthUpBits} ",
-    "format-ethernet": "{bandwidthDownBits} - {bandwidthUpBits}",
-    "interval": 1,
+    "format-wifi": "{essid} ({signalStrength}%) ",
+    "format-ethernet": "{ifname}: {ipaddr}/{cidr} ",
     "format-disconnected": "Disconnected ⚠",
-    "tooltip": true,
-    "on-click": "nm-connection-editor"
+    "on-click": "alacritty -e impala"
   },
-
   "bluetooth": {
     "format": "",
     "tooltip": true,
-      "tooltip-format": "{status}",
+    "tooltip-format": "{status}",
     "format-connected": "",
     "format-disabled": "",
+    "on-click": "alacritty -e bluetui"
   },
-
   "pulseaudio": {
-    "scroll-step": 1,
-    "format": "{volume}% {icon}",
-    "format-muted": "", 
+    //"scroll-step": 1,
+    "format": "{volume}% {icon}  {format_source}",
+    "format-muted": "",
     "format-icons": {
-      "headphones": "",
+      "headphones": " ",
       "phone": "",
       "portable": "",
-      "car": "",
-      "default": ["","  "],
+      "car": " ",
+      "default": [
+        "",
+        " "
+      ]
     },
     "on-click": "pavucontrol",
-    
-  },
-
-  "pulseaudio#microphone": {
-    "format": "{format_source}",
     "format-source": "󰍰",
-    "format-source-muted": "󰍱",
-    "on-click": "wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle",
-    "tooltip": true
+    "format-source-muted": "󰍱"
   },
-
   "niri/language": {
-    "format": "󰧺 {}",
+    "format": " {}",
     "format-en": "US",
     "format-de": "DE"
   },
-
   "mpris": {
-    "format": "   {player_icon} {status_icon} <i>{artist} - {title}</i>",
+    "format": "{player_icon} {status_icon} <i>{artist} - {title}</i>",
     "player": "playerctld",
     "max-length": 50,
     "on-click": "playerctl play-pause",
-    "format-paused": "   {player_icon} {status_icon} {artist} - {title}",
+    "format-paused": "{player_icon} {status_icon} {artist} - {title}",
     "player-icons": {
-      "default": " ",
+      "default": " "
     },
     "status-icons": {
       "paused": "⏸",
       "playing": "▶"
     }
   },
-
-  "group/audio": {
-  "orientation": "inherit",
-  "modules": [
-    "pulseaudio",
-    "pulseaudio#microphone",
-    "mpris"
-  ]
-}
-
+  "group/netblue": {
+    "orientation": "inherit",
+    "modules": [
+      "network",
+      "bluetooth"
+    ]
+  },
+  "group/cpuram": {
+    "orientation": "inherit",
+    "modules": [
+      "cpu",
+      "memory"
+    ]
+  },
+  "group/langbatray": {
+    "orientation": "inherit",
+    "modules": [
+      "niri/language",
+      "battery",
+      "tray"
+    ]
+  }
 }
