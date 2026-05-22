@@ -104,6 +104,8 @@ window#waybar {
 #network.disconnected {
     background: #f7768e;
     color: #1f2335;
+    border-radius: 10;
+    margin: 2px 2px 2px 2px;
 }
 
 
